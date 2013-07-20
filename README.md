@@ -5,7 +5,7 @@ See the demo page at http://costas-basdekis.github.io/Panes.js/
 Very simply add this to your page:
 
 ```html
-<script src="./callbackqueue.js"></script>
+<script src="./utils.js"></script>
 <script src="./dragcapture.js"></script>
 <script src="./panes.js"></script>
 
