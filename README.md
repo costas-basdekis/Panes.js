@@ -1,5 +1,7 @@
 # Resizable and draggable panes for the browser
 
+See the demo page at http://costas-basdekis.github.io/Panes.js/
+
 Very simply add this to your page:
 
 ```html
