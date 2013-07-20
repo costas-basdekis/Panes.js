@@ -576,6 +576,10 @@ Panes = {
 					// pane drag
 					Panes.Captions.dragging = false;
 				}, 0);
+			} else {
+				//Firefox: Avoid toggling the colapsed state right after a pane
+				//drag
+				Panes.Captions.dragging = false;				
 			}
 		},
 	},
