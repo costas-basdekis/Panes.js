@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+<script src="./utils.js"></script>
+<script src="./dragcapture.js"></script>
+<script src="./panes.js"></script>
+<link rel="stylesheet" type="text/css" href="./panes.css"/>
+</head>
+<body style="overflow: hidden;">
+	<div class="pane-container pane-horizontal">
+		<div class="pane-pane" data-pane-caption="Panes.js">
+			Panes.js is a lightweight javascript framework for resizable, draggable panes!
+		</div>
+		<div class="pane-pane">
+			<div class="pane-container pane-vertical">
+				<div class="pane-pane" data-pane-caption="Resizeable">
+					<ul>
+						<li>Panes are by default sized a % of the parent container, via CSS, not JS!</li>
+						<li>But you can set a static width or height so that even if the window resizes, the pane keeps the same size.</li>
+						<li>Of course you can still resize them by dragging the dividers, and they remain statically resized.</li>
+					</ul>
+				</div>
+				<div class="pane-pane">
+					<div class="pane-container pane-horizontal">
+						<div class="pane-pane" data-pane-caption="Extra big caption, that would be desirable to be clipped, and displayed using ellipsis, as to not disrupt the flow">
+							You can set captions to any pane you want
+						</div>
+						<div class="pane-pane" data-pane-caption="Collapse me!">
+							Panes with captions can be clicked to collapse and restore them. They remember their size when you restored them.
+						</div>
+						<div class="pane-pane" data-pane-caption="A lot of levels deep">
+							You can stack containers in containers! Alternate between orientations or not. You decide what's impractical.
+						</div>
+					</div>
+				</div>
+				<div class="pane-pane" data-pane-caption="Move me around!">
+					You can drag-n-drop a pane from anywhere to anywhere you want.
+				</div>
+				<div class="pane-pane">
+					Content stays inside the pane, and you can scroll to see the whole of the contents.
+					<p>
+						Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Typi non habent claritatem insitam; est usus legentis in iis qui facit eorum claritatem. Investigationes demonstraverunt lectores legere me lius quod ii legunt saepius. Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.
+					</p>
+					<table>
+						<tr>
+							<th>Column 1</th>
+							<th>Column 2</th>
+							<th>Column 3</th>
+							<th>Column 4</th>
+							<th>Column 5</th>
+							<th>Column 6</th>
+							<th>Column 7</th>
+							<th>Column 8</th>
+							<th>Column 9</th>
+							<th>Column 10</th>
+							<th>Column 11</th>
+							<th>Column 12</th>
+						</tr>
+						<tr>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+							<td>Row 1</td>
+						</tr>
+						<tr>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+							<td>Row 2</td>
+						</tr>
+						<tr>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+							<td>Row 3</td>
+						</tr>
+						<tr>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+							<td>Row 4</td>
+						</tr>
+					</table>
+					<p>
+						Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Typi non habent claritatem insitam; est usus legentis in iis qui facit eorum claritatem. Investigationes demonstraverunt lectores legere me lius quod ii legunt saepius. Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Nam liber tempor cum soluta nobis eleifend option congue nihil imperdiet doming id quod mazim placerat facer possim assum. Typi non habent claritatem insitam; est usus legentis in iis qui facit eorum claritatem. Investigationes demonstraverunt lectores legere me lius quod ii legunt saepius. Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quisnta decima. 
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	Panes.init();
+</script>
+</html>

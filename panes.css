@@ -1,0 +1,233 @@
+/*Required if we use HTML doctype*/
+html, body {
+	height: 99%;
+	height: -webkit-calc(100% - 8px);
+	height:         calc(100% - 8px);
+	background-color: #F0F0F0;
+}
+
+.pane-transition {
+	-webkit-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, -webkit-transform 0.35s;
+	   -moz-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,    -moz-transform 0.35s;
+	     -o-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,      -o-transform 0.35s;
+	/*For some reason IE doesn't animate width*/
+        	transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,         transform 0.35s;
+}
+
+/*Container*/
+.pane-container {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+/*Divider*/
+.pane-divider {
+	display: inline-block;
+	position: relative;
+	z-index: 1;
+	vertical-align: top;
+
+	background-color: inherit;
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+}
+.pane-vertical > .pane-divider {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 10px;
+	margin: 0 -5px;
+
+	cursor: ew-resize;
+	background-image: url(./divider-vertical.png);
+}
+.pane-horizontal > .pane-divider {
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: 10px;
+	margin: -5px 0;
+
+	cursor: ns-resize;
+	background-image: url(./divider-horizontal.png);
+}
+.pane-divider:first-child,
+.pane-divider:last-child {
+	display: none;
+}
+
+/*Pane*/
+.pane-pane {
+	position: relative;
+}
+.pane-vertical > .pane-pane {
+	display: inline-block;
+	height: 100%;
+	vertical-align: top;
+}
+.pane-horizontal > .pane-pane {
+	width: 100%;
+}
+
+/*Margin*/
+.pane-margin {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+.pane-vertical > .pane-pane > .pane-margin {
+	margin: 0 5px;
+}
+.pane-vertical > .pane-pane:first-of-type > .pane-margin {
+	margin-left: 0;
+}
+.pane-vertical > .pane-pane:last-of-type > .pane-margin {
+	margin-right: 0;
+}
+.pane-horizontal > .pane-pane > .pane-margin {
+	margin: 5px 0;
+}
+.pane-horizontal > .pane-pane:first-of-type > .pane-margin {
+	margin-top: 0;
+}
+.pane-horizontal > .pane-pane:last-of-type > .pane-margin {
+	margin-bottom: 0;
+}
+
+/*Caption*/
+.pane-caption {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: calc(100% - 3.5ex);
+	z-index: 1;
+
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+
+	padding-top: 0.25em;
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+	border: 1px solid black;
+	border-radius: 10px 10px 0 0;
+	box-shadow: inset 1px 1px 6px white;
+	background-color: lightslategrey;
+	color: white;
+
+	cursor: pointer;
+
+	-webkit-transform: rotate(0deg);
+	   -moz-transform: rotate(0deg);
+	     -o-transform: rotate(0deg);
+	        transform: rotate(0deg);
+	-webkit-transform-origin: 1.75ex 1.75ex;
+	   -moz-transform-origin: 1.75ex 1.75ex;
+	     -o-transform-origin: 1.75ex 1.75ex;
+	        transform-origin: 1.75ex 1.75ex;
+}
+.pane-caption.pane-caption-rotate {
+	-webkit-transform: rotate(90deg);
+	   -moz-transform: rotate(90deg);
+	     -o-transform: rotate(90deg);
+	        transform: rotate(90deg);
+	min-width: 10em;
+	max-width: 10em;
+}
+
+/*Contents*/
+.pane-contents {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+
+	overflow: auto;
+}
+.pane-pane:not(.pane-has-container) > .pane-margin > .pane-contents {
+	border: 1px solid black;
+
+	background-color: white;
+}
+.pane-pane.pane-has-caption > .pane-margin > .pane-contents {
+	top: 3.5ex;	
+}
+
+/*When dragging*/
+
+/*Bogus container*/
+.pane-container.pane-bogus {
+	width: 0;
+	height: 0;
+}
+
+/*Divider*/
+.pane-dragged .pane-divider {
+	display: inline-block;
+	cursor: auto;
+	border: 5px dashed black;
+	background-color: white;
+	background-image: none;
+}
+.pane-dragged .pane-divider.pane-drag-over {
+	background-color: lightgreen;
+}
+.pane-dragged .pane-vertical > .pane-divider {
+	width: 20px;
+	margin: 0 -15px;
+}
+.pane-dragged .pane-vertical > .pane-divider:first-child {
+	margin: 0 -30px 0 0;
+}
+.pane-dragged .pane-vertical > .pane-divider:last-child {
+	margin: 0 0 0 -30px;
+}
+.pane-dragged .pane-horizontal > .pane-divider {
+	height: 20px;
+	margin: -15px 0;
+}
+.pane-dragged .pane-horizontal > .pane-divider:first-child {
+	margin: 0 0 -30px 0;
+}
+.pane-dragged .pane-horizontal > .pane-divider:last-child {
+	margin: -30px 0 0 0;
+}
+.pane-dragged .pane-divider:only-child {
+	height: auto;
+	left: 0	;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	margin: 0 !important;
+}
+
+/*Pane that is being dragged*/
+.pane-dragged .pane-pane.pane-dragged {
+	z-index: 3;
+	position: absolute;
+}
+
+/*Margin*/
+.pane-dragged .pane-vertical > .pane-pane:not(.pane-dragged) > .pane-margin {
+	margin: 0 15px;
+}
+.pane-dragged .pane-vertical > .pane-pane:not(.pane-dragged):first-of-type > .pane-margin {
+	margin-left: 30px;
+}
+.pane-dragged .pane-vertical > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
+	margin-right: 30px;
+}
+.pane-dragged .pane-horizontal > .pane-pane:not(.pane-dragged) > .pane-margin {
+	margin: 15px 0;
+}
+.pane-dragged .pane-horizontal > .pane-pane:not(.pane-dragged):first-of-type > .pane-margin {
+	margin-top: 30px;
+}
+.pane-dragged .pane-horizontal > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
+	margin-bottom: 30px;
+}
