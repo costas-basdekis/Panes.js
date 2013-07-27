@@ -1,31 +1,48 @@
 function CallbackQueue() {
 	this.queue = [];
+	this.length = 0;
 }
-CallbackQueue.prototype.register = function register(callback) {
-	if (callback) {
-		this.queue.push(callback);
-	}
-};
-CallbackQueue.prototype.unregister = function unregister(callback) {
-	var index = this.queue.indexOf(callback);
-
-	if (index > -1) {
-		this.queue.splice(index, 1);
-	}
-}
-CallbackQueue.prototype.call = function call() {
-	for (var i = 0, callback ; callback = this.queue[i] ; i++) {
-		callback.apply(null, arguments);
-	}
-};
-CallbackQueue.prototype.each = function each(func) {
-	for (var i = 0, callback ; callback = this.queue[i] ; i++) {
-		var result = func(callback);
-		if (typeof result != "undefined") {
-			return result;
+(function initCallBackQueueProto() {
+	var proto = CallbackQueue.prototype;
+	proto.register = function register(callback) {
+		if (callback) {
+			this.queue.push(callback);
 		}
+
+		this.length = this.queue.length;
+	};
+	proto.unregister = function unregister(callback) {
+		var index = this.queue.indexOf(callback);
+
+		if (index > -1) {
+			this.queue.splice(index, 1);
+		}
+
+		this.length = this.queue.length;
 	}
-};
+	proto.call = function call() {
+		for (var i = 0, callback ; callback = this.queue[i] ; i++) {
+			callback.apply(null, arguments);
+		}
+	};
+	proto.each = function each(func) {
+		for (var i = 0, callback ; callback = this.queue[i] ; i++) {
+			var result = func(callback);
+			if (typeof result != "undefined") {
+				return result;
+			}
+		}
+	};
+	proto.firstToAccept = function firstToAccept() {
+		var result;
+		for (var i = 0, callback ; callback = this.queue[i] ; i++) {
+			result = callback.apply(null, arguments);
+			if (typeof result != "undefined") {
+				return result;
+			}
+		}
+	};
+})();
 
 function Bound(_this, func) {
 	return function BoundFunction() {

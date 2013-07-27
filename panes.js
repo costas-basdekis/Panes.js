@@ -306,6 +306,7 @@ Panes = {
 	Captions: {
 		minimumDistanceForDragStart: 3.,
 		dragging: false,
+		setDropableTargets: new CallbackQueue(),
 		init: function () {
 			DragCapture.onDragStart.register(Bound(this, this.onDragStartPreStart));
 		},
@@ -425,6 +426,19 @@ Panes = {
 		onDragStart: function (dragInfo, mouse, mouseOffset) {
 			var pane = dragInfo.pane;
 
+			//Find which containers can accept the pane
+			if (this.setDropableTargets.length) {
+				var dropableTargets = this.setDropableTargets.firstToAccept(pane);
+				//No container can accept this pane
+				if (typeof dropableTargets == "undefined" ||
+					dropableTargets.length == 0) {
+					return;
+				}
+			} else {
+				dropableTargets = $(".pane-container");
+			}
+			dropableTargets.addClass("pane-drag-dropable");
+
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
 			this.dragging = true;
 
@@ -455,7 +469,6 @@ Panes = {
 			bogusContainer.prependTo($("body"));
 
 			//Put the pane in the bogus container
-			$("body").addClass("pane-dragged");
 			bogusContainer.append(pane);
 			pane.addClass("pane-dragged");
 
@@ -505,6 +518,7 @@ Panes = {
 
 			$(".pane-drag-over").removeClass("pane-drag-over");
 			$(".pane-dragged").removeClass("pane-dragged");
+			$(".pane-drag-dropable").removeClass("pane-drag-dropable");
 
 			var pane = dragInfo.pane;
 			var placeholder = dragInfo.panePlaceholder;

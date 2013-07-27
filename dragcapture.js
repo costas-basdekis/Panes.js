@@ -94,7 +94,9 @@ DragCapture = {
         $(document).off("mousemove", this._onMouseMove)
         		   .off("mouseup", this._onMouseUp)
         		   .off("selectstart", this._cancelEvent);
-        this._dragTarget.unbind("dragstart", this._cancelEvent);
+        if (this._dragTarget) {
+        	this._dragTarget.unbind("dragstart", this._cancelEvent);
+        }
 
         if (this._onDragEnd) {
         	this._onDragEnd(this._dragExtra);
