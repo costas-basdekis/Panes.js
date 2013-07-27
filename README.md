@@ -10,10 +10,10 @@ Very simply add this to your page:
 <script src="./panes.js"></script>
 
 <div class="pane-container pane-vertical">
-	<div class="pane-pane" pane-caption"Hello World">
+	<div class="pane-pane" data-pane-options='{"caption":{"text":"Hello World!"}}'>
 
 	</div>
-	<div class="pane-pane" pane-caption="Another pane" data-pane-fixed-width="300px">
+	<div class="pane-pane" data-pane-options='{"caption":{"text":"Another pane"}, "fixedWidth":"300px"}'>
 		This pane doesn't resize when its parent resizes
 	</div>
 </div>
@@ -21,5 +21,3 @@ Very simply add this to your page:
 	Panes.init();
 </script>
 ```
-
-Containers and panes must be div, all classes used have a pane-prefix. Panes.js will modify the structure of the DOM, so the contenets of a .pane-pane will be in a .pane-container after init()

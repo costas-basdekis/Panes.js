@@ -1,4 +1,22 @@
 
+function numberAndRest(value) {
+	var number = parseFloat(value);
+
+	if (isNaN(number)) {
+		return false;
+	}
+
+	var rest = "";
+	if (value != number) {
+		rest = value.toString().substr(number.toString().length);
+	}
+
+	return {
+		number: number,
+		rest: rest,
+	};
+}
+
 Panes = {
 	transitionDuration: 200,
 	init: function () {
@@ -23,32 +41,9 @@ Panes = {
 
 		//Make pane
 		$(".pane-pane").each(function (i, pane) {
-			pane = $(pane);
+			var paneData = Panes.Pane(pane);
 
-			var margin = $("<div class='pane-margin'></div>");
-
-			//Add caption
-			if (pane.is("[data-pane-caption]")) {
-				pane.addClass("pane-has-caption");
-				var captionText = pane.attr("data-pane-caption");
-				var caption = $("<div class='pane-caption pane-transition' " +
-					"title='" + captionText + "'>" + captionText + "</div>");
-				caption.click(Panes.Captions.onClick);
-				margin.append(caption);
-			}
-
-			//Add contents
-			var contents = $("<div class='pane-contents'></div>");
-			contents.append(pane.contents());
-			margin.append(contents);
-
-			//Check for just a container pane
-			var paneChildren = contents.children();
-			if (paneChildren.length == 2 && paneChildren.hasClass("pane-container")) {
-				pane.addClass("pane-has-container");
-			}
-
-			pane.append(margin);
+			paneData.initDOM();
 		});
 
 		//Put dividers
@@ -80,27 +75,16 @@ Panes = {
 			container = $(container);
 	
 			var children = container.children(".pane-pane");
-			var metric = container.hasClass("pane-vertical") ? "width" : "height";
+			if (!children.length) {
+				return;
+			}
+
+			var isVertical = container.hasClass("pane-vertical");
 			var size = 1. / children.length;
-	
-			children.attr("data-pane-size", size)
-					.attr("data-pane-metric", metric)
-					.attr("data-pane-static", false);
 
-			//Static panes
-			children.filter("[data-pane-fixed-" + metric + "]")
-					.each(function (i, pane) {
-				pane = $(pane);
-
-				pane.attr("data-pane-static-size",
-						  pane.attr("data-pane-fixed-" + metric))
-					.attr("data-pane-static", true);
+			children.each(function (i, pane) {
+				pane.paneData.initSize(isVertical, size);
 			});
-			
-			//Collapsed panes
-			children.filter(".pane-collapsed").each(function(i, pane) {
-				Panes.toggleCollapsed($(pane));
-			})
 		});
 	},
 	//Change the pane sizes to reflect the data
@@ -109,35 +93,44 @@ Panes = {
 			containers = $(".pane-container");
 		}
 	
-		containers.each(function (i, container) {
+		containers.each(function (i, container, updateChildren) {
 			container = $(container);
+			var children = container.children(".pane-pane");
 	
-			var flexiblePanes = container.children(".pane-pane[data-pane-static=false]");
-			var staticPanes = container.children(".pane-pane[data-pane-static=true]");
+			var flexiblePanes = children.filter(function (i, pane) {
+				return !pane.paneData.state.isStatic;
+			});
+			var staticPanes = children.filter(function (i, pane) {
+				return pane.paneData.state.isStatic;
+			});
 			var isVertical = container.hasClass("pane-vertical");
 			var metric = isVertical ? "width" : "height";
 	
 			//Find the total static size
 			var totalstaticSize = staticPanes.toArray()
 											 .reduce(function (total, pane) {
-				return total + parseInt($(pane).attr("data-pane-static-size"));
-			}, 0);
+				return total + " + " + pane.paneData.state.staticSize;
+			}, "0px");
 	
 			//Find the total flexible percentage
 			var totalFlexibleSize = flexiblePanes.toArray()
 												 .reduce(function (total, pane) {
-				return total + parseFloat($(pane).attr("data-pane-size"));
+				return total + pane.paneData.state.flexibleSize;
 			}, 0.);
 	
 			//Put the flexibles calculated sizes
+			if (updateChildren) {
+				flexiblePanes = flexiblePanes.filter(updateChildren);
+			}
 			flexiblePanes.each(function (i, pane) {
+				var paneData = pane.paneData;
 				pane = $(pane);
-				var size = pane.attr("data-pane-size");
+				var size = paneData.state.flexibleSize;
 	
 				//Fallback for Safari < 6.0 and others that don't support calc
 				pane.css(metric, (size / totalFlexibleSize * 100.) + "%");
-				if (totalstaticSize > 0) {
-					var newSize = "calc((100% - " + totalstaticSize + "px) * " +
+				if (staticPanes.length > 0) {
+					var newSize = "calc((100% - (" + totalstaticSize + ")) * " +
 								  (size / totalFlexibleSize) + ")";
 					//Fallback for Safari 6.0+
 					pane.css(metric, "-webkit-" + newSize);
@@ -146,65 +139,191 @@ Panes = {
 			});
 
 			//Set static non-collapsed panes size
-			staticPanes.filter(":not(.pane-collapsed)").each(function (i, pane) {
-				pane = $(pane);
+			if (updateChildren) {
+				staticPanes = staticPanes.filter(updateChildren);
+			}
+			staticPanes.each(function (i, pane) {
+				var paneData = pane.paneData;
+				var $pane = $(pane);
 
-				pane.css(metric, pane.attr("data-pane-static-size"));
+				//if (!paneData.state.isCollapsed) {
+					$pane.css(metric, paneData.state.staticSize);
+				//}
 			});
-		})
+		});
 	},
 	toggleCollapsed: function (pane) {
-		var container = pane.parent();
-		var isVertical = container.hasClass("pane-vertical");
-		var metric = isVertical ? "width" : "height";
-		var size = pane.attr("data-pane-size")
-		var contents = $("> .pane-margin > .pane-contents", pane);
-		var caption = $("> .pane-margin > .pane-caption", pane);
-		var collapsed = pane.hasClass("pane-collapsed");
-	
-		//Toggle state
-		collapsed = !collapsed;
-		pane.toggleClass("pane-collapsed", collapsed);
-		pane.attr("data-pane-static", collapsed);
-	
-		//Set size
-		if (collapsed) {
-			var captionHeight = caption.outerHeight();
-	
-			//Find the collapsed size by getting the caption height, plus the padding
-			//due to surrounding dividers
-			var dividerSize = parseInt(pane.siblings(".pane-divider").css(metric));
-			var isInMiddle = pane.is(":not(:first-of-type):not(:last-of-type)");
-			var staticSize = captionHeight + dividerSize / (isInMiddle ? 1. : 2.);
-	
-			//Rotate vertical captions
-			if (isVertical) {
-				caption.addClass("pane-caption-rotate");
-				pane.css("width", staticSize);
-			}
-	
-			pane.attr("data-pane-static-size", staticSize)
-				.css("height", staticSize);
-			contents.fadeOut(this.transitionDuration);
-		} else {
-			//Unrotate vertical captions
-			caption.removeClass("pane-caption-rotate").css("top", "");
-	
-			pane.removeAttr("data-pane-static-size")
-				.css("height", "");
-			if (pane.is("[data-pane-fixed-" + metric + "]")) {
-				pane.attr("data-pane-static-size",
-						  pane.attr("data-pane-fixed-" + metric));
-				pane.attr("data-pane-static", true);
-			}
-			contents.fadeIn(Panes.transitionDuration);
-		}
-	
-		//Resize flexible panes
-		this.updateSizes(container);
+		pane[0].paneData.toggleCollapsed();
 	},
 	initDrag: function () {
 	},
+	Pane: function (element) {
+		if (!element.paneData) {
+			element.paneData = new this.paneData(element);
+		}
+
+		return element.paneData;
+	},
+	paneData: (function initPaneProto() {
+		paneData = function (element) {
+			var $element = $(element);
+
+			this.els = {
+				pane: $(element),
+			};
+			this.state = {
+				isInMiddle: this.els.pane.is(":not(:first-of-type):not(:last-of-type)"),
+			};
+			this.loadOptions();
+		};
+		var Pane = function (element) {
+			if (!element.paneData) {
+				element.paneData = new paneData(element);
+			}
+
+			return element.paneData;
+		};
+		var proto = paneData.prototype;
+
+		function sizeIsStatic (size) {
+			var nar = numberAndRest(size);
+
+			if (!nar) {
+				return false;
+			}
+
+			if (!nar.rest) {
+				return true;
+			}
+
+			return [
+				//Absolute
+				"px", "cm", "mm", "in", "pt", "pc",
+				//Font relative
+				"ex", "em", "rem", "ch",
+				//Viewport relative
+				"vh", "vw", "vmin", "vmax",
+			].indexOf(nar.rest) != -1;
+		};
+		proto.loadOptions = function () {
+			try {
+				this.options = JSON.parse(this.els.pane.attr("data-pane-options") || "{}");
+			} catch(e) {
+				this.options = {};
+			}
+	
+			if (sizeIsStatic(this.options.fixedWidth)) {
+				this.state.fixedWidth = this.options.fixedWidth;
+			}
+			if (sizeIsStatic(this.options.fixedHeight)) {
+				this.state.fixedHeight = this.options.fixedHeight;
+			}
+		};
+		proto.initDOM = function () {
+			var options = this.options, state = this.state;
+
+			var pane = this.els.pane;
+
+			var margin = $("<div class='pane-margin'></div>");
+
+			//Add caption
+			state.hasCaption = !!options.caption;
+			if (state.hasCaption) {
+				pane.addClass("pane-has-caption");
+				var captionText = options.caption.text;
+				var caption = $("<div class='pane-caption pane-transition' " +
+					"title='" + captionText + "'>" + captionText + "</div>");
+				caption.click(Panes.Captions.onClick);
+				margin.append(caption);
+			}
+
+			//Add contents
+			var contents = $("<div class='pane-contents'></div>");
+			contents.append(pane.contents());
+			margin.append(contents);
+
+			//Check for just a container pane
+			var paneChildren = contents.children();
+			state.hasContainer = paneChildren.length == 2 && paneChildren.hasClass("pane-container");
+			if (state.hasContainer) {
+				pane.addClass("pane-has-container");
+			}
+
+			pane.append(margin);
+
+			this.els.margin = margin;
+			this.els.caption = caption;
+			this.els.contents = contents;
+		};
+		proto.initSize = function (isVertical, flexibleSize) {
+			var options = this.options, state = this.state;
+
+			if ('defaultFlexibleSize' in options) {
+				state.flexibleSize = options.defaultFlexibleSize;
+			} else {
+				state.flexibleSize = flexibleSize;
+			}
+			state.staticSize = options['fixed' + (isVertical ? 'Width' : 'Height')];
+
+			this.updateSize(isVertical);
+
+			if (options.collapsed) {
+				this.toggleCollapsed();
+			}
+		};
+		proto.updateSize = function (isVertical) {
+			var options = this.options, state = this.state;
+
+			if (typeof isVertical != "undefined") {
+				state.isVertical = isVertical;
+			}
+			state.metric = isVertical ? "width" : "height";
+
+			var staticSize = state.isVertical ? state.fixedWidth : state.fixedHeight;
+			state.isStatic = state.isCollapsed || !!staticSize;
+			if (state.isStatic && !state.isCollapsed) {
+				state.staticSize = staticSize;
+			}
+		};
+		proto.toggleCollapsed = function () {
+			var options = this.options, state = this.state;
+
+			var pane = this.els.pane;
+		
+			//Toggle state
+			state.isCollapsed = !state.isCollapsed;
+			this.updateSize();
+		
+			//Set size
+			if (state.isCollapsed) {
+				var captionHeight = this.els.caption.outerHeight();
+		
+				//Find the collapsed size by getting the caption height, plus the padding
+				//due to surrounding dividers
+				var dividerSize = parseInt(pane.siblings(".pane-divider").css(state.isVertical ? "width" : "height"));
+				var staticSize = captionHeight + dividerSize / (state.isInMiddle ? 1. : 2.);
+		
+				//Rotate vertical captions
+				if (state.isVertical) {
+					this.els.caption.addClass("pane-caption-rotate");
+				}
+		
+				state.staticSize = staticSize + "px";
+				this.els.contents.fadeOut(this.transitionDuration);
+			} else {
+				//Unrotate vertical captions
+				this.els.caption.removeClass("pane-caption-rotate");
+		
+				pane.css("height", "");
+				this.els.contents.fadeIn(Panes.transitionDuration);
+			}
+		
+			//Resize flexible panes
+			Panes.updateSizes(pane.parent());
+		};
+
+		return Pane;
+	})(),
 	Dividers: {
 		init: function (){
 			DragCapture.onDragStart.register(Bound(this, this.onDragStart));
@@ -236,14 +355,14 @@ Panes = {
 				mouseStart: isVertical ? mouseStart.x : mouseStart.y,
 				prev: prev,
 				next: next,
-				prevStatic: prev.attr("data-pane-static") == "true",
-				nextStatic: next.attr("data-pane-static") == "true",
+				prevStatic: prev[0].paneData.state.isStatic,
+				nextStatic: next[0].paneData.state.isStatic,
 				currentPrevSizePX: prevSizePX,
 				totalSizePX: prevSizePX + nextSizePX,
 			}
 			var totalSizePC = 0;
-			var prevSizePC = parseFloat(prev.attr("data-pane-size"));
-			var nextSizePC = parseFloat(next.attr("data-pane-size"));
+			var prevSizePC = prev[0].paneData.state.flexibleSize;
+			var nextSizePC = next[0].paneData.state.flexibleSize;
 			if (!dragInfo.prevStatic && !dragInfo.nextStatic) {
 				totalSizePC = prevSizePC + nextSizePC;
 			} else if (!dragInfo.prevStatic) {
@@ -252,6 +371,13 @@ Panes = {
 				totalSizePC = nextSizePC / nextSizePX * dragInfo.totalSizePX;
 			}
 			dragInfo.totalSizePC = totalSizePC;
+
+			if (dragInfo.prevStatic) {
+				dragInfo.prevStaticRatio = numberAndRest(prev[0].paneData.state.staticSize).number / prevSizePX;
+			}
+			if (dragInfo.nextStatic) {
+				dragInfo.nextStaticRatio = numberAndRest(next[0].paneData.state.staticSize).number / nextSizePX;
+			}
 		
 			//Don't animate size changes
 			dragInfo.prev.removeClass("pane-transition");
@@ -286,18 +412,25 @@ Panes = {
 
 			//Apply them
 			if (dragInfo.prevStatic) {
-				dragInfo.prev.attr("data-pane-static-size", newPrevSizePX);
+				var nar = numberAndRest(dragInfo.prev[0].paneData.state.staticSize);
+				dragInfo.prev[0].paneData.state.staticSize = (newPrevSizePX * dragInfo.prevStaticRatio) + nar.rest;
 			} else {
-				dragInfo.prev.attr("data-pane-size", newPrevSizePC);
+				dragInfo.prev[0].paneData.state.flexibleSize = newPrevSizePC;
 			}
 			if (dragInfo.nextStatic) {
-				dragInfo.next.attr("data-pane-static-size", newNextSizePX);
+				var nar = numberAndRest(dragInfo.next[0].paneData.state.staticSize);
+				dragInfo.next[0].paneData.state.staticSize = (newNextSizePX * dragInfo.nextStaticRatio) + nar.rest;
 			} else {
-				dragInfo.next.attr("data-pane-size", newNextSizePC);
+				dragInfo.next[0].paneData.state.flexibleSize = newNextSizePC;
 			}
-			Panes.updateSizes(dragInfo.container);
+
+			//Update only the relevant panes to avoid flickering
+			Panes.updateSizes(dragInfo.container, [dragInfo.prev, dragInfo.next]);
 		},
 		onDragEnd: function (dragInfo) {
+			//Update all panes
+			Panes.updateSizes(dragInfo.container);
+
 			//Animate height changes
 			dragInfo.prev.addClass("pane-transition");
 			dragInfo.next.addClass("pane-transition");
@@ -472,9 +605,6 @@ Panes = {
 			bogusContainer.append(pane);
 			pane.addClass("pane-dragged");
 
-			//Animate dividers
-			$(".pane-divider").addClass("pane-transition");
-
 			//Update drag info
 			dragInfo.paneOffset = paneOffset;
 			dragInfo.panePlaceholder = panePlaceholder;
@@ -523,14 +653,17 @@ Panes = {
 			var pane = dragInfo.pane;
 			var placeholder = dragInfo.panePlaceholder;
 
-			var divider = dragInfo.divider;
 			var oldNextDivider = placeholder.next();
+			var divider = dragInfo.divider || oldNextDivider;
 			var changedPosition = divider[0] != oldNextDivider[0];
 
 			var newParent = divider.parent();
 			var oldParent = placeholder.parent();
 			var changedParents = newParent[0] != oldParent[0];
+			var paneData = pane[0].paneData;
+			var oldIsVertical = paneData.state.isVertical;
 			var newIsVertical = newParent.hasClass("pane-vertical");
+			var changedOrientation = oldIsVertical != newIsVertical;
 
 			//Put pane and divider in new position
 			if (changedPosition) {
@@ -548,11 +681,8 @@ Panes = {
 			$(".pane-divider").removeClass("pane-transition");
 
 			//Remove size CSS and recalculate them
-			var oldMetric = pane.attr("data-pane-metric");
-			var newMetric = placeholder.attr("data-pane-metric");
 			pane.css("left", "")
 				.css("top", "")
-				.attr("data-pane-metric", newMetric)
 				.css("width", !newIsVertical ? "100%" :
 							  (changedParents ? 0 : placeholder[0].style.width))
 				.css("height", newIsVertical ? "100%" : 
@@ -564,18 +694,12 @@ Panes = {
 			if (changedPosition) {
 				//If switched between vertical and horizontal, set the static
 				// size, and turn collapsed on and off
-				if (oldMetric != newMetric) {
-					//Update static size
-					var fixedSize =  pane.attr("data-pane-fixed-" + newMetric);
-					if (fixedSize) {
-						pane.attr("data-pane-static-size", fixedSize);
-					}
-					pane.attr("data-pane-fixed", fixedSize);
+				paneData.updateSize(newIsVertical);
 
-					//Update collapsed size
-					if (pane.hasClass("pane-collapsed")) {
-						Panes.toggleCollapsed(pane);
-						Panes.toggleCollapsed(pane);
+				if (oldIsVertical != newIsVertical) {
+					if (paneData.state.isCollapsed) {
+						paneData.toggleCollapsed();
+						paneData.toggleCollapsed();
 					}
 				}
 

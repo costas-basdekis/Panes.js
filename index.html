@@ -11,7 +11,7 @@
 </head>
 <body style="overflow: hidden;">
 	<div class="pane-container pane-horizontal">
-		<div class="pane-pane" data-pane-caption="Panes.js">
+		<div class="pane-pane" data-pane-options='{"caption":{"text":"Panes.js"}}'>
 			<div class="pane-container pane-vertical">
 				<div class="pane-pane">
 					Panes.js is a lightweight javascript framework for resizable, draggable panes!
@@ -24,27 +24,28 @@
 		</div>
 		<div class="pane-pane">
 			<div class="pane-container pane-vertical">
-				<div class="pane-pane" data-pane-caption="Resizeable">
+				<div class="pane-pane" data-pane-options='{"caption":{"text":"Resizable"}, "fixedWidth":"50ex"}'>
 					<ul>
 						<li>Panes are by default sized a % of the parent container, via CSS, not JS!</li>
 						<li>But you can set a static width or height so that even if the window resizes, the pane keeps the same size.</li>
 						<li>Of course you can still resize them by dragging the dividers, and they remain statically resized.</li>
+						<li>This pane is statically resized, initially at 50ex</li>
 					</ul>
 				</div>
 				<div class="pane-pane">
 					<div class="pane-container pane-horizontal">
-						<div class="pane-pane" data-pane-caption="Extra big caption, that would be desirable to be clipped, and displayed using ellipsis, as to not disrupt the flow">
+						<div class="pane-pane" data-pane-options='{"caption":{"text":"Extra big caption, that would be desirable to be clipped, and displayed using ellipsis, as to not disrupt the flow"}}'>
 							You can set captions to any pane you want
 						</div>
-						<div class="pane-pane" data-pane-caption="Collapse me!">
+						<div class="pane-pane" data-pane-options='{"caption":{"text":"Collapse me!"}}'>
 							Panes with captions can be clicked to collapse and restore them. They remember their size when you restored them.
 						</div>
-						<div class="pane-pane" data-pane-caption="A lot of levels deep">
+						<div class="pane-pane" data-pane-options='{"caption":{"text":"A lot of levels deep"}}'>
 							You can stack containers in containers! Alternate between orientations or not. You decide what's impractical.
 						</div>
 					</div>
 				</div>
-				<div class="pane-pane" data-pane-caption="Move me around!">
+				<div class="pane-pane" data-pane-options='{"caption":{"text":"Move me around!"}, "fixedWidth":"150pax"}'>
 					You can drag-n-drop a pane from anywhere to anywhere you want.
 				</div>
 				<div class="pane-pane">
