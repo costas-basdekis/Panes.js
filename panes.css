@@ -179,6 +179,12 @@ body,
 	max-width: 10em;
 }
 
+.pane-caption-text {
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
 /*Control box*/
 .pane-control-box {
 	display: inline-block;

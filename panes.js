@@ -237,8 +237,9 @@ Panes = {
 			if (state.hasCaption) {
 				pane.addClass("pane-has-caption");
 				var captionText = options.caption.text;
-				var caption = $("<div class='pane-caption pane-transition' " +
-					"title='" + captionText + "'>" + captionText + "</div>");
+				var caption = $("<div class='pane-caption pane-transition'\
+									  title='" + captionText + "'></div>");
+				caption.append("<div class='pane-caption-text'>" + captionText + "</div>");	
 				margin.append(caption);
 
 				//Add control box
