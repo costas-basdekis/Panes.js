@@ -693,6 +693,11 @@ Panes = {
 				return false;
 			}
 
+			//Don't drag while maximized
+			if (target.hasClass("pane-maximized")) {
+				return false;
+			}
+
 			var pane = target.parent().parent();
 			
 			dragInfo = {
