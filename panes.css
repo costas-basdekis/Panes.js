@@ -179,6 +179,54 @@ body,
 	max-width: 10em;
 }
 
+/*Control box*/
+.pane-control-box {
+	display: inline-block;
+	float: right;
+}
+/*Controls*/
+.pane-control {
+	display: inline-block;
+
+	width: 15px;
+	height: 15px;
+
+	border: 1px solid grey;
+	background-color: white;
+	box-shadow: inset 0px -1px 1ex lightblue;
+}
+.pane-control:hover {
+	box-shadow: inset 0px 0px 1ex gold;
+}
+.pane-control:active {
+	box-shadow: inset 0px -2px 1ex gold;
+	background-color: #DDD;
+}
+.pane-caption-rotate .pane-control {
+	-webkit-transform: rotate(-90deg);
+	   -moz-transform: rotate(-90deg);
+	     -o-transform: rotate(-90deg);
+	        transform: rotate(-90deg);
+}
+.pane-control.pane-control-minimize {
+	background-image: url(images/minimize.png);
+}
+.pane-control.pane-control-maximize {
+	background-image: url(images/maximize.png);
+}
+.pane-pane.pane-maximized > * > * > * > .pane-control.pane-control-maximize {
+	display: none;
+}
+.pane-control.pane-control-restore {
+	background-image: url(images/restore.png);
+}
+.pane-pane:not(.pane-maximized) > * > * > * > .pane-control.pane-control-restore {
+	display: none;
+}
+.pane-control.pane-control-close {
+	background-image: url(images/close.png);
+}
+
 /*Contents*/
 .pane-contents {
 	position: absolute;

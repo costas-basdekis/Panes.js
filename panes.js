@@ -240,6 +240,15 @@ Panes = {
 					"title='" + captionText + "'>" + captionText + "</div>");
 				caption.click(Panes.Captions.onClick);
 				margin.append(caption);
+
+				//Add control box
+				var controlBox = $("<div class='pane-control-box'></div>");
+				controlBox.append("<span class='pane-control pane-control-minimize'></div>");
+				controlBox.append("<span class='pane-control pane-control-maximize'></div>");
+				controlBox.append("<span class='pane-control pane-control-restore'></div>");
+				controlBox.append("<span class='pane-control pane-control-close'></div>");
+
+				caption.prepend(controlBox);
 			}
 
 			//Add contents
@@ -448,7 +457,11 @@ Panes = {
 		init: function () {
 			DragCapture.onDragStart.register(Bound(this, this.onDragStartPreStart));
 		},
-		onClick: function () {
+		onClick: function (event) {
+			//Clicked on a control button; don't collapse
+			if ($(event.target).is(".pane-control-box, .pane-control")) {
+				return;
+			}
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
 			if (Panes.Captions.dragging) {
 				return;
