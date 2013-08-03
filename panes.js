@@ -884,7 +884,7 @@ Panes = {
 			if ($(".pane-maximized").length) {
 				Panes.ControlBoxes.onRestore.call($(".pane-maximized"));
 				setTimeout(function() {
-					Panes.ControlBoxes.onMinimize.call(pane);
+					Panes.ControlBoxes.onMaximize.call(pane);
 				}, Panes.transitionDuration);
 				return;
 			}
