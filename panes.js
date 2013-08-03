@@ -420,6 +420,8 @@ Panes = {
 					this.toggleCollapsed();
 				}
 			}
+
+			delete this.floatData;
 		};
 		proto.movePanePlaceholder = function(dividerAfter) {
 			var pane = this.els.pane;
@@ -479,6 +481,18 @@ Panes = {
 					Panes.updateSizes(oldParent);
 				}
 			}, 0);
+		};
+		proto.close = function() {
+			if (this.floatData) {
+				this.floatData.bogusContainer.remove();
+			}
+
+			var pane = this.els.pane;
+			var parent = pane.parent();
+			pane.next().remove();
+			pane.remove();
+
+			Panes.updateSizes(parent);
 		};
 
 		return Pane;
@@ -849,6 +863,7 @@ Panes = {
 			$(".pane-control-minimize").click(this.onMinimize);
 			$(".pane-control-maximize").click(this.onMaximize);
 			$(".pane-control-restore").click(this.onRestore);
+			$(".pane-control-close").click(this.onClose);
 		},
 		onMinimize: function () {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
@@ -938,6 +953,34 @@ Panes = {
 					pane.addClass("pane-transition");
 				}, 0);
 			}, Panes.transitionDuration);
+		},
+		onClose: function () {
+			//Firefox: Avoid toggling the colapsed state right after a pane drag
+			if (Panes.Captions.dragging) {
+				return;
+			}
+			
+			var pane = $(this).closest(".pane-pane");
+			var paneData = pane[0].paneData;
+
+			if (!paneData.confirmedClose) {
+				if (!confirm('Are you sure you want to close this?')) {
+					return;
+				}
+			}
+
+			//If pane is maximized then restore it
+			if (pane.hasClass("pane-maximized")) {
+				Panes.ControlBoxes.onRestore.call(this);
+				paneData.confirmedClose = true;
+				setTimeout(function () {
+					Panes.ControlBoxes.onClose.call(pane);
+				}, Panes.transitionDuration);
+				return;
+			}
+
+			paneData.close();
+			pane.remove();
 		},
 	},
 };
