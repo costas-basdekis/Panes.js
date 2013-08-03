@@ -27,6 +27,7 @@ Panes = {
 	
 		this.Dividers.init();
 		this.Captions.init();
+		this.ControlBoxes.init();
 	},
 	initDOM: function () {
 		//Detach containers so that we don't redraw with each change
@@ -238,15 +239,14 @@ Panes = {
 				var captionText = options.caption.text;
 				var caption = $("<div class='pane-caption pane-transition' " +
 					"title='" + captionText + "'>" + captionText + "</div>");
-				caption.click(Panes.Captions.onClick);
 				margin.append(caption);
 
 				//Add control box
 				var controlBox = $("<div class='pane-control-box'></div>");
-				controlBox.append("<span class='pane-control pane-control-minimize'></div>");
-				controlBox.append("<span class='pane-control pane-control-maximize'></div>");
-				controlBox.append("<span class='pane-control pane-control-restore'></div>");
-				controlBox.append("<span class='pane-control pane-control-close'></div>");
+				controlBox.append("<span class='pane-control pane-control-minimize' title='Minimize'></div>");
+				controlBox.append("<span class='pane-control pane-control-maximize' title='Maximize'></div>");
+				controlBox.append("<span class='pane-control pane-control-restore' title='Restore'></div>");
+				controlBox.append("<span class='pane-control pane-control-close' title='Close'></div>");
 
 				caption.prepend(controlBox);
 			}
@@ -306,6 +306,7 @@ Panes = {
 		
 			//Toggle state
 			state.isCollapsed = !state.isCollapsed;
+			pane.toggleClass("pane-minimized", state.isCollapsed);
 			this.updateSize();
 		
 			//Set size
@@ -456,21 +457,6 @@ Panes = {
 		setDroppableTargets: new CallbackQueue(),
 		init: function () {
 			DragCapture.onDragStart.register(Bound(this, this.onDragStartPreStart));
-		},
-		onClick: function (event) {
-			//Clicked on a control button; don't collapse
-			if ($(event.target).is(".pane-control-box, .pane-control")) {
-				return;
-			}
-			//Firefox: Avoid toggling the colapsed state right after a pane drag
-			if (Panes.Captions.dragging) {
-				return;
-			}
-
-			var caption = $(this);
-			var pane = caption.parent().parent();
-		
-			Panes.toggleCollapsed(pane);
 		},
 		createBoundingBoxes: function (container) {
 			//Get all top-level containers if no parent specified
@@ -812,6 +798,24 @@ Panes = {
 			}
 
 			this.dragging = false;
+		},
+	},
+	ControlBoxes: {
+		init: function() {
+			this.initEventHandlers();
+		},
+		initEventHandlers: function() {
+			$(".pane-control-minimize").click(this.onClick);
+		},
+		onClick: function (event) {
+			//Firefox: Avoid toggling the colapsed state right after a pane drag
+			if (Panes.Captions.dragging) {
+				return;
+			}
+
+			var pane = $(this).closest(".pane-pane");
+		
+			Panes.toggleCollapsed(pane);
 		},
 	},
 };

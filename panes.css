@@ -159,7 +159,7 @@ body,
 	background-color: lightslategrey;
 	color: white;
 
-	cursor: pointer;
+	cursor: move;
 
 	-webkit-transform: rotate(0deg);
 	   -moz-transform: rotate(0deg);
@@ -194,6 +194,8 @@ body,
 	border: 1px solid grey;
 	background-color: white;
 	box-shadow: inset 0px -1px 1ex lightblue;
+
+	cursor: pointer;
 }
 .pane-control:hover {
 	box-shadow: inset 0px 0px 1ex gold;
@@ -211,7 +213,7 @@ body,
 .pane-control.pane-control-minimize {
 	background-image: url(images/minimize.png);
 }
-.pane-control.pane-control-maximize {
+	.pane-control.pane-control-maximize {
 	background-image: url(images/maximize.png);
 }
 .pane-pane.pane-maximized > * > * > * > .pane-control.pane-control-maximize {
