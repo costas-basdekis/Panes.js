@@ -162,15 +162,22 @@ Panes = {
 	},
 	initDrag: function () {
 	},
-	Pane: function (element) {
-		if (!element.paneData) {
-			element.paneData = new this.paneData(element);
-		}
+	Pane: (function initPaneProto() {
+		function Pane (element) {
+			var $element = $(element).closest(".pane-pane");
 
-		return element.paneData;
-	},
-	paneData: (function initPaneProto() {
-		paneData = function (element) {
+			if (!$element.length) {
+				return null;
+			}
+			element = $element[0];
+
+			if (!element.paneData) {
+				element.paneData = new paneData(element);
+			}
+
+			return element.paneData;
+		};
+		function paneData (element) {
 			this.els = {
 				pane: $(element),
 			};
@@ -178,13 +185,6 @@ Panes = {
 			
 			this.update();
 			this.loadOptions();
-		};
-		var Pane = function (element) {
-			if (!element.paneData) {
-				element.paneData = new paneData(element);
-			}
-
-			return element.paneData;
 		};
 		var proto = paneData.prototype;
 
