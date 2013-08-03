@@ -572,13 +572,14 @@ Panes = {
 					return;
 				}
 				//Only target containers
-				droppableTargets = droppableTargets.filter(".pane-container");
+				droppableTargets = droppableTargets.filter(".pane-divider");
 			} else {
-				droppableTargets = $(".pane-container");
+				droppableTargets = $(".pane-divider");
 			}
 
 			//Can't drop into inner containers
-			droppableTargets = droppableTargets.not($(".pane-container", pane));
+			droppableTargets = droppableTargets.not(pane.next())
+											   .not($(".pane-divider", pane));
 
 			//No container can accept this pane
 			if (!droppableTargets.length) {
@@ -624,6 +625,12 @@ Panes = {
 
 			//Highlight possible drop targets
 			droppableTargets.addClass("pane-drag-droppable");
+			droppableTargets.parent().addClass("pane-drag-droppable");
+			//Don't show the previous divider of the current placeholder position
+			var prevDivider = panePlaceholder.prev();
+			prevDivider.toggleClass("pane-was-drag-droppable",
+									prevDivider.hasClass("pane-drag-droppable"));
+			prevDivider.removeClass("pane-drag-droppable");
 
 			//Update drag info
 			dragInfo.paneOffset = paneOffset;
@@ -699,7 +706,15 @@ Panes = {
 
 			//Put pane and divider in new position
 			//Different position; bring-your-own-divider
-			divider.after([placeholder,oldNextDivider]);
+			divider.after([placeholder, oldNextDivider]);
+
+			//Don't show the previous divider of the current placeholder position
+			var prevDivider = divider;
+			$(".pane-was-drag-droppable").removeClass("pane-was-drag-droppable")
+										 .addClass("pane-drag-droppable");
+			prevDivider.toggleClass("pane-was-drag-droppable",
+									prevDivider.hasClass("pane-drag-droppable"));
+			prevDivider.removeClass("pane-drag-droppable");
 
 			//Stop animating dividers
 			$(".pane-divider").removeClass("pane-transition");
@@ -744,6 +759,7 @@ Panes = {
 			$(".pane-drag-over").removeClass("pane-drag-over");
 			$(".pane-dragged").removeClass("pane-dragged");
 			$(".pane-drag-droppable").removeClass("pane-drag-droppable");
+			$(".pane-was-drag-droppable").removeClass("pane-was-drag-droppable");
 
 			var pane = dragInfo.pane;
 			var paneData = pane[0].paneData;

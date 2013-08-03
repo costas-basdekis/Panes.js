@@ -200,27 +200,28 @@ body,
 
 /*When dragging*/
 
-.pane-drag-droppable * {
-	cursor: move;	
-}
-
 /*Bogus container*/
 .pane-container.pane-bogus {
 	width: 0;
 	height: 0;
 }
 
+.pane-placeholder {
+	background: url(./placeholder.png) 0 0 repeat;
+	background-size: 90px;
+}
+
 /*Divider*/
-.pane-drag-droppable > .pane-divider {
+.pane-drag-droppable.pane-divider {
 	background-color: white;
 }
-.pane-drag-droppable > .pane-divider:not(:only-child) {
+.pane-drag-droppable.pane-divider:not(:only-child) {
 	display: inline-block;
 	cursor: auto;
 	border: 5px dashed black;
 	background-image: none;
 }
-.pane-drag-droppable > .pane-divider.pane-drag-over {
+.pane-drag-droppable.pane-divider.pane-drag-over {
 	background-color: lightgreen;
 }
 .pane-drag-droppable.pane-vertical > .pane-divider:not(:only-child) {
