@@ -265,7 +265,6 @@ body,
 
 .pane-drag-droppable.pane-placeholder {
 	background: url(images/placeholder.png) 0 0 repeat;
-	background-size: 90px;
 }
 
 /*Divider*/
