@@ -67,7 +67,7 @@ boundingBox = (function initBoxProto() {
 		return this.right - this.left;
 	};
 	box.prototype.height = function () {
-		return this.top - this.bottom;
+		return this.bottom - this.top;
 	};
 	box.prototype.middleVertical = function () {
 		return (this.left + this.right) / 2.;
