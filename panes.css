@@ -58,7 +58,7 @@ body,
 	margin: 0 -5px;
 
 	cursor: ew-resize;
-	background-image: url(divider-vertical.png);
+	background-image: url(images/divider-vertical.png);
 }
 .pane-horizontal > .pane-divider {
 	position: absolute;
@@ -68,7 +68,7 @@ body,
 	margin: -5px 0;
 
 	cursor: ns-resize;
-	background-image: url(divider-horizontal.png);
+	background-image: url(images/divider-horizontal.png);
 }
 .pane-divider:first-child,
 .pane-divider:last-child {
@@ -207,7 +207,7 @@ body,
 }
 
 .pane-placeholder {
-	background: url(./placeholder.png) 0 0 repeat;
+	background: url(images/placeholder.png) 0 0 repeat;
 	background-size: 90px;
 }
 
