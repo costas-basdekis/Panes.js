@@ -185,7 +185,7 @@ html, body {
 
 /*When dragging*/
 
-.pane-drag-dropable * {
+.pane-drag-droppable * {
 	cursor: move;	
 }
 
@@ -196,36 +196,36 @@ html, body {
 }
 
 /*Divider*/
-.pane-drag-dropable > .pane-divider {
+.pane-drag-droppable > .pane-divider {
 	background-color: white;
 }
-.pane-drag-dropable > .pane-divider:not(:only-child) {
+.pane-drag-droppable > .pane-divider:not(:only-child) {
 	display: inline-block;
 	cursor: auto;
 	border: 5px dashed black;
 	background-image: none;
 }
-.pane-drag-dropable > .pane-divider.pane-drag-over {
+.pane-drag-droppable > .pane-divider.pane-drag-over {
 	background-color: lightgreen;
 }
-.pane-drag-dropable.pane-vertical > .pane-divider:not(:only-child) {
+.pane-drag-droppable.pane-vertical > .pane-divider:not(:only-child) {
 	width: 20px;
 	margin: 0 -15px;
 }
-.pane-drag-dropable.pane-vertical > .pane-divider:not(:only-child):first-child {
+.pane-drag-droppable.pane-vertical > .pane-divider:not(:only-child):first-child {
 	margin: 0 -30px 0 0;
 }
-.pane-drag-dropable.pane-vertical > .pane-divider:not(:only-child):last-child {
+.pane-drag-droppable.pane-vertical > .pane-divider:not(:only-child):last-child {
 	margin: 0 0 0 -30px;
 }
-.pane-drag-dropable.pane-horizontal > .pane-divider:not(:only-child) {
+.pane-drag-droppable.pane-horizontal > .pane-divider:not(:only-child) {
 	height: 20px;
 	margin: -15px 0;
 }
-.pane-drag-dropable.pane-horizontal > .pane-divider:not(:only-child):first-child {
+.pane-drag-droppable.pane-horizontal > .pane-divider:not(:only-child):first-child {
 	margin: 0 0 -30px 0;
 }
-.pane-drag-dropable.pane-horizontal > .pane-divider:not(:only-child):last-child {
+.pane-drag-droppable.pane-horizontal > .pane-divider:not(:only-child):last-child {
 	margin: -30px 0 0 0;
 }
 
@@ -236,21 +236,21 @@ html, body {
 }
 
 /*Margin*/
-.pane-drag-dropable.pane-vertical > .pane-pane:not(.pane-dragged) > .pane-margin {
+.pane-drag-droppable.pane-vertical > .pane-pane:not(.pane-dragged) > .pane-margin {
 	margin: 0 15px;
 }
-.pane-drag-dropable.pane-vertical > .pane-pane:not(.pane-dragged):first-of-type > .pane-margin {
+.pane-drag-droppable.pane-vertical > .pane-pane:not(.pane-dragged):first-of-type > .pane-margin {
 	margin-left: 30px;
 }
-.pane-drag-dropable.pane-vertical > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
+.pane-drag-droppable.pane-vertical > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
 	margin-right: 30px;
 }
-.pane-drag-dropable.pane-horizontal > .pane-pane:not(.pane-dragged) > .pane-margin {
+.pane-drag-droppable.pane-horizontal > .pane-pane:not(.pane-dragged) > .pane-margin {
 	margin: 15px 0;
 }
-.pane-drag-dropable.pane-horizontal > .pane-pane:not(.pane-dragged):first-of-type > .pane-margin {
+.pane-drag-droppable.pane-horizontal > .pane-pane:not(.pane-dragged):first-of-type > .pane-margin {
 	margin-top: 30px;
 }
-.pane-drag-dropable.pane-horizontal > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
+.pane-drag-droppable.pane-horizontal > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
 	margin-bottom: 30px;
 }
