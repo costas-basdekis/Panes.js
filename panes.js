@@ -337,6 +337,153 @@ Panes = {
 			//Resize flexible panes
 			Panes.updateSizes(pane.parent());
 		};
+		proto.float = function(toggle) {
+			if (toggle) {
+				this.floatOn();
+			} else {
+				this.floatOff();
+			}
+		};
+		proto.floatOn = function() {
+			var pane = this.els.pane;
+			this.floatData = {
+				pane: pane,
+			}
+
+			var paneOffset = pane.offset();
+			//Subtract the body offset, because we will move the pane in
+			//relation to the body
+			var bodyOffset = $("body").offset();
+			paneOffset.left -= bodyOffset.left;
+			paneOffset.top -= bodyOffset.top;
+
+			//Put placeholder in pane's position
+			var panePlaceholder = $("<div class='pane-pane pane-placeholder'></div>");
+			panePlaceholder.css("width", pane[0].style.width)
+						   .css("height", pane[0].style.height);
+			pane.css("width", pane.outerWidth())
+				.css("height", pane.outerHeight());
+			pane.after(panePlaceholder);
+			pane.removeClass("pane-transition");
+			this.floatData.panePosition = {
+				left: paneOffset.left,
+				top: paneOffset.top,
+				width: pane.width(),
+				height: pane.height(),
+			};
+			pane.css("left", this.floatData.panePosition.left)
+				.css("top", this.floatData.panePosition.top)
+				.css("width", this.floatData.panePosition.width)
+				.css("height", this.floatData.panePosition.height);
+
+			//So that we can move the placeholder around
+			this.els.pane = panePlaceholder;
+			panePlaceholder[0].paneData = this;
+
+			//Create a bogus container to put the pane, so that we can move it around
+			var bogusContainer = $("<div class='pane-container pane-bogus'/>");
+			var isVertical = pane.parent().hasClass("pane-vertical");
+			bogusContainer.toggleClass("pane-vertical", isVertical)
+						  .toggleClass("pane-horizontal", !isVertical);
+			bogusContainer.prependTo($("body"));
+
+			//Put the pane in the bogus container
+			bogusContainer.append(pane);
+
+			this.floatData.paneOffset = paneOffset;
+			this.floatData.panePlaceholder = panePlaceholder;
+			this.floatData.bogusContainer = bogusContainer;
+		};
+		proto.floatOff = function() {
+			var pane = this.floatData.pane;
+			//Set the target back to pane, from placeholder
+			this.els.pane = pane;
+			var placeholder = this.floatData.panePlaceholder;
+
+			var oldIsVertical = pane.parent().hasClass("pane-vertical");
+			var newIsVertical = placeholder.parent().hasClass("pane-vertical");
+			var changedOrientation = oldIsVertical != newIsVertical;
+
+			placeholder.after(pane);
+
+			//Discard the placeholder and bogus container
+			placeholder.remove();
+			this.floatData.bogusContainer.remove();
+
+			//Remove size CSS and recalculate them
+			pane.css("left", "")
+				.css("top", "")
+				.css("width", placeholder[0].style.width)
+				.css("height", placeholder[0].style.height)
+
+			this.updateSize(newIsVertical);
+
+			if (oldIsVertical != newIsVertical) {
+				if (this.state.isCollapsed) {
+					this.toggleCollapsed();
+					this.toggleCollapsed();
+				}
+			}
+		};
+		proto.movePanePlaceholder = function(dividerAfter) {
+			var pane = this.els.pane;
+			var placeholder = this.floatData.panePlaceholder;
+
+			var oldNextDivider = placeholder.next();
+			var changedPosition = dividerAfter[0] != oldNextDivider[0];
+
+			var newParent = dividerAfter.parent();
+			var oldParent = placeholder.parent();
+			var changedParents = newParent[0] != oldParent[0];
+
+			var oldIsVertical = this.state.isVertical;
+			var newIsVertical = newParent.hasClass("pane-vertical");
+			var changedOrientation = oldIsVertical != newIsVertical;
+
+			//Same position, no need to do anything
+			if (!changedPosition) {
+				return;
+			}
+
+			//Put pane and divider in new position
+			//Different position; bring-your-own-divider
+			dividerAfter.after([placeholder, oldNextDivider]);
+
+			//Don't show the previous divider of the current placeholder position
+			var prevDivider = dividerAfter;
+			$(".pane-was-drag-droppable").removeClass("pane-was-drag-droppable")
+										 .addClass("pane-drag-droppable");
+			prevDivider.toggleClass("pane-was-drag-droppable",
+									prevDivider.hasClass("pane-drag-droppable"));
+			prevDivider.removeClass("pane-drag-droppable");
+
+			//Stop animating dividers
+			$(".pane-divider").removeClass("pane-transition");
+
+			//Remove size CSS and recalculate them
+			placeholder.css("left", "")
+					   .css("top", "")
+					   .css("width", !newIsVertical ? "100%" :
+					   		(changedParents ? 0 : placeholder[0].style.width))
+					   .css("height", newIsVertical ? "100%" : 
+					   		(changedParents ? 0 : placeholder[0].style.height))
+
+			//Animate size changes
+			placeholder.addClass("pane-transition");
+
+			//If switched between vertical and horizontal, set the static
+			// size, and turn collapsed on and off
+			this.update();
+			this.updateSize(newIsVertical);
+
+			//Repaint the DOM before resizing the panes
+			setTimeout(function() {
+				Panes.updateSizes(newParent);
+				if (changedParents) {
+					Panes.updateSizes(oldParent);
+				}
+			}, 0);
+		};
 
 		return Pane;
 	})(),
@@ -543,6 +690,9 @@ Panes = {
 		},
 		onDragStartPreStart: function (target, mouseStart, acceptParameters) {
 			//Only for captions
+			if (target.hasClass("pane-caption-text")) {
+				target = target.parent();
+			}
 			if (!target.hasClass("pane-caption")) {
 				return false;
 			}
@@ -563,6 +713,7 @@ Panes = {
 		},
 		onDragStart: function (dragInfo, mouse, mouseOffset) {
 			var pane = dragInfo.pane;
+			var paneData = pane[0].paneData
 
 			//Find which containers can accept the pane
 			if (this.setDroppableTargets.length) {
@@ -589,40 +740,15 @@ Panes = {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
 			this.dragging = true;
 
-			var paneOffset = pane.offset();
-			//Subtract the body offset, because we will move the pane in
-			//relation to the body
-			var bodyOffset = $("body").offset();
-			paneOffset.left -= bodyOffset.left;
-			paneOffset.top -= bodyOffset.top;
+			paneData.float(true);
+			var panePlaceholder = paneData.floatData.panePlaceholder;
+			var bogusContainer = paneData.floatData.bogusContainer;
+			var paneOffset = paneData.floatData.paneOffset;
 			//Add the mouse offset to account for minimumDistanceForDragStart
 			paneOffset.left += mouseOffset.x;
 			paneOffset.top += mouseOffset.y;
 
-			//Put placeholder in pane's position
-			var panePlaceholder = $("<div class='pane-pane pane-placeholder'></div>");
-			panePlaceholder.css("width", pane[0].style.width)
-						   .css("height", pane[0].style.height);
-			pane.css("width", pane.outerWidth())
-				.css("height", pane.outerHeight());
-			pane.after(panePlaceholder);
-			pane.removeClass("pane-transition");
-			//So that we can move the placeholder around
-			paneData = pane[0].paneData;
-			paneData.els.pane = panePlaceholder;
-			panePlaceholder[0].paneData = paneData;
-
-			//Create a bogus container to put the pane, so that we can move it around
-			var bogusContainer = $("<div class='pane-container pane-bogus'/>");
-			var isVertical = pane.parent().hasClass("pane-vertical");
-			bogusContainer.toggleClass("pane-vertical", isVertical)
-						  .toggleClass("pane-horizontal", !isVertical);
-			bogusContainer.prependTo($("body"));
-
-			//Put the pane in the bogus container
-			bogusContainer.append(pane);
 			pane.addClass("pane-dragged");
-
 			//Highlight possible drop targets
 			droppableTargets.addClass("pane-drag-droppable");
 			droppableTargets.parent().addClass("pane-drag-droppable");
@@ -661,8 +787,10 @@ Panes = {
 				return;
 			}
 			//Move pane
-			dragInfo.pane.css("left", mouseOffset.x + dragInfo.paneOffset.left)
-						 .css("top", mouseOffset.y + dragInfo.paneOffset.top);
+			var pane = dragInfo.pane;
+			var paneOffset = pane[0].paneData.floatData.paneOffset;
+			pane.css("left", mouseOffset.x + paneOffset.left)
+						 .css("top", mouseOffset.y + paneOffset.top);
 
 			//Panes are still resizing
 			if (dragInfo.pauseMovePlaceholder) {
@@ -674,74 +802,11 @@ Panes = {
 			dragInfo.divider = this.findDividerFromMouse(dragInfo.boundingBoxes, mouse);
 			if (dragInfo.divider) {
 				dragInfo.divider.addClass("pane-drag-over");
-				this.movePanePlaceholder(dragInfo, dragInfo.divider);
+				this.movePanePlaceholder(dragInfo);
 			}
 		},
-		movePanePlaceholder: function(dragInfo, dividerAfter) {
-			var pane = dragInfo.pane;
-			var paneData = pane[0].paneData;
-			var placeholder = dragInfo.panePlaceholder;
-
-			var oldNextDivider = placeholder.next();
-			var divider = dragInfo.divider || oldNextDivider;
-			var changedPosition = divider[0] != oldNextDivider[0];
-
-			var newParent = divider.parent();
-			var oldParent = placeholder.parent();
-			var changedParents = newParent[0] != oldParent[0];
-
-			var oldIsVertical = paneData.state.isVertical;
-			var newIsVertical = newParent.hasClass("pane-vertical");
-			var changedOrientation = oldIsVertical != newIsVertical;
-
-			//Panes are still resizing, so we don't have the new bounding boxes yet
-			if (dragInfo.pauseMovePlaceholder) {
-				return;
-			}
-
-			//Same position, no need to do anything
-			if (!changedPosition) {
-				return;
-			}
-
-			//Put pane and divider in new position
-			//Different position; bring-your-own-divider
-			divider.after([placeholder, oldNextDivider]);
-
-			//Don't show the previous divider of the current placeholder position
-			var prevDivider = divider;
-			$(".pane-was-drag-droppable").removeClass("pane-was-drag-droppable")
-										 .addClass("pane-drag-droppable");
-			prevDivider.toggleClass("pane-was-drag-droppable",
-									prevDivider.hasClass("pane-drag-droppable"));
-			prevDivider.removeClass("pane-drag-droppable");
-
-			//Stop animating dividers
-			$(".pane-divider").removeClass("pane-transition");
-
-			//Remove size CSS and recalculate them
-			placeholder.css("left", "")
-					   .css("top", "")
-					   .css("width", !newIsVertical ? "100%" :
-					   		(changedParents ? 0 : placeholder[0].style.width))
-					   .css("height", newIsVertical ? "100%" : 
-					   		(changedParents ? 0 : placeholder[0].style.height))
-
-			//Animate size changes
-			placeholder.addClass("pane-transition");
-
-			//If switched between vertical and horizontal, set the static
-			// size, and turn collapsed on and off
-			paneData.update();
-			paneData.updateSize(newIsVertical);
-
-			//Repaint the DOM before resizing the panes
-			setTimeout(function() {
-				Panes.updateSizes(newParent);
-				if (changedParents) {
-					Panes.updateSizes(oldParent);
-				}
-			}, 0);
+		movePanePlaceholder: function(dragInfo) {
+			dragInfo.pane[0].paneData.movePanePlaceholder(dragInfo.divider);
 
 			//Calculate the bounding boxes after resizing is done
 			dragInfo.pauseMovePlaceholder = true;
@@ -761,42 +826,15 @@ Panes = {
 			$(".pane-drag-droppable").removeClass("pane-drag-droppable");
 			$(".pane-was-drag-droppable").removeClass("pane-was-drag-droppable");
 
-			var pane = dragInfo.pane;
-			var paneData = pane[0].paneData;
-			//Set the target back to pane, from placeholder
-			paneData.els.pane = pane;
-			var placeholder = dragInfo.panePlaceholder;
-
-			var oldIsVertical = pane.parent().hasClass("pane-vertical");
-			var newIsVertical = placeholder.parent().hasClass("pane-vertical");
-			var changedOrientation = oldIsVertical != newIsVertical;
-
-			placeholder.after(pane);
-
-			//Discard the placeholder and bogus container
-			placeholder.remove();
-			dragInfo.bogusContainer.remove();
-
 			//Stop animating dividers
 			$(".pane-divider").removeClass("pane-transition");
 
-			//Remove size CSS and recalculate them
-			pane.css("left", "")
-				.css("top", "")
-				.css("width", placeholder[0].style.width)
-				.css("height", placeholder[0].style.height)
+			var pane = dragInfo.pane;
+			var paneData = pane[0].paneData;
+			paneData.float(false);
 
 			//Animate size changes
 			pane.addClass("pane-transition");
-
-			paneData.updateSize(newIsVertical);
-
-			if (oldIsVertical != newIsVertical) {
-				if (paneData.state.isCollapsed) {
-					paneData.toggleCollapsed();
-					paneData.toggleCollapsed();
-				}
-			}
 
 			this.dragging = false;
 		},
@@ -807,6 +845,8 @@ Panes = {
 		},
 		initEventHandlers: function() {
 			$(".pane-control-minimize").click(this.onClick);
+			$(".pane-control-maximize").click(this.onMaximize);
+			$(".pane-control-restore").click(this.onRestore);
 		},
 		onClick: function (event) {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
@@ -817,6 +857,44 @@ Panes = {
 			var pane = $(this).closest(".pane-pane");
 		
 			Panes.toggleCollapsed(pane);
+		},
+		onMaximize: function () {
+			var pane = $(this).closest(".pane-pane");
+			var paneData = pane[0].paneData;
+
+			paneData.float(true);
+			console.log(paneData.floatData.panePosition)
+			//Setting sizes to vh/vw doesn't perform the transitions correctly
+			//Set the position/size manually, and then apply the class
+			setTimeout(function() {
+				pane.addClass("pane-transition");
+				var vw = $(window).width(), vh = $(window).height();
+				pane.css("left", vw * 0.01)
+					.css("width", vw * 0.98)
+					.css("top", vh * 0.01)
+					.css("height", vh * 0.98);
+			}, 0);
+			//We apply the class so that the pane resizes when the window resizes
+			setTimeout(function() {
+				pane.removeClass("pane-transition");
+				pane.addClass("pane-maximized");
+			}, Panes.transitionDuration);
+			paneData.floatData.bogusContainer.addClass("pane-maximized");
+		},
+		onRestore: function () {
+			var pane = $(this).closest(".pane-pane");
+			var paneData = pane[0].paneData;
+
+			pane.removeClass("pane-maximized");
+			pane.addClass("pane-transition");
+			pane.css("left", paneData.floatData.panePosition.left)
+				.css("top", paneData.floatData.panePosition.top)
+				.css("width", paneData.floatData.panePosition.width)
+				.css("height", paneData.floatData.panePosition.height);
+			setTimeout(function() {
+				pane.removeClass("pane-transition");
+				paneData.float(false);
+			}, Panes.transitionDuration);
 		},
 	},
 };

@@ -326,3 +326,26 @@ body,
 .pane-drag-droppable.pane-horizontal > .pane-pane:not(.pane-dragged):last-of-type > .pane-margin {
 	margin-bottom: 30px;
 }
+
+/*Maximized*/
+.pane-pane.pane-maximized {
+	z-index: 2;
+
+	position: absolute;
+	left: 1vw;
+	top: 1vh;
+	width: 98vw;
+	height: 98vh;
+}
+.pane-bogus.pane-maximized {
+	z-index: 2;
+
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	
+	width: auto;
+	height: auto;
+}
