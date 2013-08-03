@@ -563,14 +563,22 @@ Panes = {
 			if (this.setDroppableTargets.length) {
 				var droppableTargets = this.setDroppableTargets.firstToAccept(pane);
 				//No container can accept this pane
-				if (typeof droppableTargets == "undefined" ||
-					droppableTargets.length == 0) {
+				if (typeof droppableTargets == "undefined") {
 					return;
 				}
+				//Only target containers
+				droppableTargets = droppableTargets.filter(".pane-container");
 			} else {
 				droppableTargets = $(".pane-container");
 			}
-			droppableTargets.addClass("pane-drag-droppable");
+
+			//Can't drop into inner containers
+			droppableTargets = droppableTargets.not($(".pane-container", pane));
+			
+			//No container can accept this pane
+			if (!droppableTargets.length) {
+				return;
+			}
 
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
 			this.dragging = true;
@@ -604,6 +612,9 @@ Panes = {
 			//Put the pane in the bogus container
 			bogusContainer.append(pane);
 			pane.addClass("pane-dragged");
+
+			//Highlight possible drop targets
+			droppableTargets.addClass("pane-drag-droppable");
 
 			//Update drag info
 			dragInfo.paneOffset = paneOffset;
