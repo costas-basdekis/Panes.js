@@ -11,6 +11,13 @@ body,
 	background-color: #F0F0F0;
 }
 
+.pane-color-transition {
+	-webkit-transition: background-color 0.15s;
+	   -moz-transition: background-color 0.15s;
+	     -o-transition: background-color 0.15s;
+        	transition: background-color 0.15s;
+}
+
 .pane-transition {
 	-webkit-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, -webkit-transform 0.35s;
 	   -moz-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,    -moz-transform 0.35s;
@@ -39,6 +46,9 @@ body,
 	background-color: inherit;
 	background-position: 50% 50%;
 	background-repeat: no-repeat;
+}
+.pane-divider:not(:only-child):hover {
+	background-color: #E0E0E0;
 }
 .pane-vertical > .pane-divider {
 	position: absolute;

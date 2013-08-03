@@ -18,7 +18,8 @@ function numberAndRest(value) {
 }
 
 Panes = {
-	transitionDuration: 200,
+	//This should be equal to .pane-transition duration
+	transitionDuration: 350,
 	init: function () {
 		this.initDOM();
 		this.initSizes();
@@ -64,6 +65,9 @@ Panes = {
 			var placeholder = tlcPlaceholders[i];
 			$(placeholder).after(container).detach();
 		})
+
+		//Animate dividers on hover
+		$(".pane-divider").addClass("pane-color-transition");
 	
 		//Enable transitions only after the page has loaded, and elements have
 		//been sized
@@ -166,14 +170,12 @@ Panes = {
 	},
 	paneData: (function initPaneProto() {
 		paneData = function (element) {
-			var $element = $(element);
-
 			this.els = {
 				pane: $(element),
 			};
-			this.state = {
-				isInMiddle: this.els.pane.is(":not(:first-of-type):not(:last-of-type)"),
-			};
+			this.state = {};
+			
+			this.update();
 			this.loadOptions();
 		};
 		var Pane = function (element) {
@@ -193,7 +195,7 @@ Panes = {
 			}
 
 			if (!nar.rest) {
-				return true;
+				return nar.number == 0;
 			}
 
 			return [
@@ -204,6 +206,9 @@ Panes = {
 				//Viewport relative
 				"vh", "vw", "vmin", "vmax",
 			].indexOf(nar.rest) != -1;
+		};
+		proto.update = function () {
+			this.state.isInMiddle = this.els.pane.is(":not(:first-of-type):not(:last-of-type)");
 		};
 		proto.loadOptions = function () {
 			try {
@@ -574,7 +579,7 @@ Panes = {
 
 			//Can't drop into inner containers
 			droppableTargets = droppableTargets.not($(".pane-container", pane));
-			
+
 			//No container can accept this pane
 			if (!droppableTargets.length) {
 				return;
@@ -601,6 +606,10 @@ Panes = {
 				.css("height", pane.outerHeight());
 			pane.after(panePlaceholder);
 			pane.removeClass("pane-transition");
+			//So that we can move the placeholder around
+			paneData = pane[0].paneData;
+			paneData.els.pane = panePlaceholder;
+			panePlaceholder[0].paneData = paneData;
 
 			//Create a bogus container to put the pane, so that we can move it around
 			var bogusContainer = $("<div class='pane-container pane-bogus'/>");
@@ -622,6 +631,9 @@ Panes = {
 			dragInfo.bogusContainer = bogusContainer;
 			dragInfo.dragStarted = true;
 			dragInfo.boundingBoxes = this.createBoundingBoxes();
+			//Flag that indicates if panes are resizing after a movePlaceholder,
+			//so we don't have the new bounding boxes
+			dragInfo.pauseMovePlaceholder = false;
 
 			//Put the pane in its position
 			this.onDragMove(dragInfo, mouse, mouseOffset, mouseOffset);
@@ -645,12 +657,84 @@ Panes = {
 			dragInfo.pane.css("left", mouseOffset.x + dragInfo.paneOffset.left)
 						 .css("top", mouseOffset.y + dragInfo.paneOffset.top);
 
+			//Panes are still resizing
+			if (dragInfo.pauseMovePlaceholder) {
+				return;
+			}
+
 			//Highlight current divider
 			$(".pane-drag-over").removeClass("pane-drag-over");
 			dragInfo.divider = this.findDividerFromMouse(dragInfo.boundingBoxes, mouse);
 			if (dragInfo.divider) {
 				dragInfo.divider.addClass("pane-drag-over");
+				this.movePanePlaceholder(dragInfo, dragInfo.divider);
 			}
+		},
+		movePanePlaceholder: function(dragInfo, dividerAfter) {
+			var pane = dragInfo.pane;
+			var paneData = pane[0].paneData;
+			var placeholder = dragInfo.panePlaceholder;
+
+			var oldNextDivider = placeholder.next();
+			var divider = dragInfo.divider || oldNextDivider;
+			var changedPosition = divider[0] != oldNextDivider[0];
+
+			var newParent = divider.parent();
+			var oldParent = placeholder.parent();
+			var changedParents = newParent[0] != oldParent[0];
+
+			var oldIsVertical = paneData.state.isVertical;
+			var newIsVertical = newParent.hasClass("pane-vertical");
+			var changedOrientation = oldIsVertical != newIsVertical;
+
+			//Panes are still resizing, so we don't have the new bounding boxes yet
+			if (dragInfo.pauseMovePlaceholder) {
+				return;
+			}
+
+			//Same position, no need to do anything
+			if (!changedPosition) {
+				return;
+			}
+
+			//Put pane and divider in new position
+			//Different position; bring-your-own-divider
+			divider.after([placeholder,oldNextDivider]);
+
+			//Stop animating dividers
+			$(".pane-divider").removeClass("pane-transition");
+
+			//Remove size CSS and recalculate them
+			placeholder.css("left", "")
+					   .css("top", "")
+					   .css("width", !newIsVertical ? "100%" :
+					   		(changedParents ? 0 : placeholder[0].style.width))
+					   .css("height", newIsVertical ? "100%" : 
+					   		(changedParents ? 0 : placeholder[0].style.height))
+
+			//Animate size changes
+			placeholder.addClass("pane-transition");
+
+			//If switched between vertical and horizontal, set the static
+			// size, and turn collapsed on and off
+			paneData.update();
+			paneData.updateSize(newIsVertical);
+
+			//Repaint the DOM before resizing the panes
+			setTimeout(function() {
+				Panes.updateSizes(newParent);
+				if (changedParents) {
+					Panes.updateSizes(oldParent);
+				}
+			}, 0);
+
+			//Calculate the bounding boxes after resizing is done
+			dragInfo.pauseMovePlaceholder = true;
+			var self = this;
+			setTimeout(function() {
+				dragInfo.boundingBoxes = self.createBoundingBoxes();
+				dragInfo.pauseMovePlaceholder = false;
+			}, Panes.transitionDuration);
 		},
 		onDragEnd: function (dragInfo) {
 			if (!dragInfo.dragStarted) {
@@ -662,27 +746,16 @@ Panes = {
 			$(".pane-drag-droppable").removeClass("pane-drag-droppable");
 
 			var pane = dragInfo.pane;
+			var paneData = pane[0].paneData;
+			//Set the target back to pane, from placeholder
+			paneData.els.pane = pane;
 			var placeholder = dragInfo.panePlaceholder;
 
-			var oldNextDivider = placeholder.next();
-			var divider = dragInfo.divider || oldNextDivider;
-			var changedPosition = divider[0] != oldNextDivider[0];
-
-			var newParent = divider.parent();
-			var oldParent = placeholder.parent();
-			var changedParents = newParent[0] != oldParent[0];
-			var paneData = pane[0].paneData;
-			var oldIsVertical = paneData.state.isVertical;
-			var newIsVertical = newParent.hasClass("pane-vertical");
+			var oldIsVertical = pane.parent().hasClass("pane-vertical");
+			var newIsVertical = placeholder.parent().hasClass("pane-vertical");
 			var changedOrientation = oldIsVertical != newIsVertical;
 
-			//Put pane and divider in new position
-			if (changedPosition) {
-				//Different position; bring-your-own-divider
-				divider.after([pane,oldNextDivider]);
-			} else {
-				placeholder.after(pane);
-			}
+			placeholder.after(pane);
 
 			//Discard the placeholder and bogus container
 			placeholder.remove();
@@ -694,42 +767,22 @@ Panes = {
 			//Remove size CSS and recalculate them
 			pane.css("left", "")
 				.css("top", "")
-				.css("width", !newIsVertical ? "100%" :
-							  (changedParents ? 0 : placeholder[0].style.width))
-				.css("height", newIsVertical ? "100%" : 
-							   (changedParents ? 0 : placeholder[0].style.height))
+				.css("width", placeholder[0].style.width)
+				.css("height", placeholder[0].style.height)
 
 			//Animate size changes
 			pane.addClass("pane-transition");
 
-			if (changedPosition) {
-				//If switched between vertical and horizontal, set the static
-				// size, and turn collapsed on and off
-				paneData.updateSize(newIsVertical);
+			paneData.updateSize(newIsVertical);
 
-				if (oldIsVertical != newIsVertical) {
-					if (paneData.state.isCollapsed) {
-						paneData.toggleCollapsed();
-						paneData.toggleCollapsed();
-					}
+			if (oldIsVertical != newIsVertical) {
+				if (paneData.state.isCollapsed) {
+					paneData.toggleCollapsed();
+					paneData.toggleCollapsed();
 				}
-
-				//Repaint the DOM before resizing the panes
-				setTimeout(function() {
-					Panes.updateSizes(newParent);
-					if (changedParents) {
-						Panes.updateSizes(oldParent);
-					}
-
-					//Firefox: Avoid toggling the colapsed state right after a
-					// pane drag
-					Panes.Captions.dragging = false;
-				}, 0);
-			} else {
-				//Firefox: Avoid toggling the colapsed state right after a pane
-				//drag
-				Panes.Captions.dragging = false;				
 			}
+
+			this.dragging = false;
 		},
 	},
 };
