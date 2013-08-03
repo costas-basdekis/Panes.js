@@ -359,22 +359,18 @@ Panes = {
 
 			//Put placeholder in pane's position
 			var panePlaceholder = $("<div class='pane-pane pane-placeholder'></div>");
+			panePlaceholder.append("<div class='pane-margin'></div>");
 			panePlaceholder.css("width", pane[0].style.width)
 						   .css("height", pane[0].style.height);
 			pane.css("width", pane.outerWidth())
 				.css("height", pane.outerHeight());
 			pane.after(panePlaceholder);
 			pane.removeClass("pane-transition");
-			this.floatData.panePosition = {
-				left: paneOffset.left,
-				top: paneOffset.top,
-				width: pane.width(),
-				height: pane.height(),
-			};
-			pane.css("left", this.floatData.panePosition.left)
-				.css("top", this.floatData.panePosition.top)
-				.css("width", this.floatData.panePosition.width)
-				.css("height", this.floatData.panePosition.height);
+			var paneMarginBoundBox = $("> .pane-margin", pane).boundingBox();
+			pane.css("left", paneMarginBoundBox.left)
+				.css("top", paneMarginBoundBox.top)
+				.css("width", paneMarginBoundBox.width())
+				.css("height", paneMarginBoundBox.height());
 
 			//So that we can move the placeholder around
 			this.els.pane = panePlaceholder;
@@ -742,6 +738,7 @@ Panes = {
 
 			paneData.float(true);
 			var panePlaceholder = paneData.floatData.panePlaceholder;
+			panePlaceholder.addClass("pane-drag-droppable")
 			var bogusContainer = paneData.floatData.bogusContainer;
 			var paneOffset = paneData.floatData.paneOffset;
 			//Add the mouse offset to account for minimumDistanceForDragStart
@@ -844,11 +841,11 @@ Panes = {
 			this.initEventHandlers();
 		},
 		initEventHandlers: function() {
-			$(".pane-control-minimize").click(this.onClick);
+			$(".pane-control-minimize").click(this.onMinimize);
 			$(".pane-control-maximize").click(this.onMaximize);
 			$(".pane-control-restore").click(this.onRestore);
 		},
-		onClick: function (event) {
+		onMinimize: function () {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
 			if (Panes.Captions.dragging) {
 				return;
@@ -856,44 +853,85 @@ Panes = {
 
 			var pane = $(this).closest(".pane-pane");
 		
+			//If pane is maximized then restore it
+			if (pane.hasClass("pane-maximized")) {
+				Panes.ControlBoxes.onRestore.call(this);
+				setTimeout(function() {
+					Panes.ControlBoxes.onMinimize.call(pane);
+				}, Panes.transitionDuration);
+				return;
+			}
+
+			pane.addClass("pane-transition");
 			Panes.toggleCollapsed(pane);
 		},
 		onMaximize: function () {
+			//Firefox: Avoid toggling the colapsed state right after a pane drag
+			if (Panes.Captions.dragging) {
+				return;
+			}
+
 			var pane = $(this).closest(".pane-pane");
 			var paneData = pane[0].paneData;
+
+			//If pane is minimized then restore it
+			if (pane.hasClass("pane-minimized")) {
+				pane.removeClass("pane-transition");
+				Panes.ControlBoxes.onMinimize.call(this);
+			}
+
+			//If there is another maximized item then restore it
+			if ($(".pane-maximized").length) {
+				Panes.ControlBoxes.onRestore.call($(".pane-maximized"));
+				setTimeout(function() {
+					Panes.ControlBoxes.onMinimize.call(pane);
+				}, Panes.transitionDuration);
+				return;
+			}
 
 			paneData.float(true);
-			console.log(paneData.floatData.panePosition)
-			//Setting sizes to vh/vw doesn't perform the transitions correctly
-			//Set the position/size manually, and then apply the class
+			pane.addClass("pane-transition");
 			setTimeout(function() {
-				pane.addClass("pane-transition");
-				var vw = $(window).width(), vh = $(window).height();
-				pane.css("left", vw * 0.01)
-					.css("width", vw * 0.98)
-					.css("top", vh * 0.01)
-					.css("height", vh * 0.98);
-			}, 0);
-			//We apply the class so that the pane resizes when the window resizes
-			setTimeout(function() {
-				pane.removeClass("pane-transition");
 				pane.addClass("pane-maximized");
-			}, Panes.transitionDuration);
+			}, 0);
 			paneData.floatData.bogusContainer.addClass("pane-maximized");
+			paneData.floatData.bogusContainer.css("background", "none");
+			setTimeout(function() {
+				paneData.floatData.bogusContainer.css("background", "");
+			}, Panes.transitionDuration);
 		},
 		onRestore: function () {
+			//Firefox: Avoid toggling the colapsed state right after a pane drag
+			if (Panes.Captions.dragging) {
+				return;
+			}
+
 			var pane = $(this).closest(".pane-pane");
 			var paneData = pane[0].paneData;
 
+			paneData.floatData.bogusContainer.css("background", "none");
+
 			pane.removeClass("pane-maximized");
-			pane.addClass("pane-transition");
-			pane.css("left", paneData.floatData.panePosition.left)
-				.css("top", paneData.floatData.panePosition.top)
-				.css("width", paneData.floatData.panePosition.width)
-				.css("height", paneData.floatData.panePosition.height);
+			//Shrink to placeholder's current position
+			var panePlaceholder = paneData.floatData.panePlaceholder;
+			var paneMargin = $("> .pane-margin", panePlaceholder);
+			var paneMarginBoundingBox = paneMargin.boundingBox();
+			pane.css("left", paneMarginBoundingBox.left)
+				.css("top", paneMarginBoundingBox.top)
+				.css("width", paneMarginBoundingBox.width())
+				.css("height", paneMarginBoundingBox.height())
+				.css("position", "absolute")
+				.addClass("pane-transition");
+
+			//Put back into panes grid
 			setTimeout(function() {
-				pane.removeClass("pane-transition");
+				pane.css("position", "")
+					.removeClass("pane-transition");
 				paneData.float(false);
+
+				setTimeout(function() {
+					pane.addClass("pane-transition");
+				}, 0);
 			}, Panes.transitionDuration);
 		},
 	},

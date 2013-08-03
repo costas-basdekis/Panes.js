@@ -262,7 +262,7 @@ body,
 	height: 0;
 }
 
-.pane-placeholder {
+.pane-drag-droppable.pane-placeholder {
 	background: url(images/placeholder.png) 0 0 repeat;
 	background-size: 90px;
 }
@@ -332,10 +332,10 @@ body,
 	z-index: 2;
 
 	position: absolute;
-	left: 1vw;
-	top: 1vh;
-	width: 98vw;
-	height: 98vh;
+	left: 1% !important;
+	top: 1% !important;
+	width: 98% !important;
+	height: 98% !important;
 }
 .pane-bogus.pane-maximized {
 	z-index: 2;
