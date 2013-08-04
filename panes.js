@@ -139,7 +139,7 @@ Panes = {
 								  (size / totalFlexibleSize) + ")";
 					//Fallback for Safari 6.0+
 					pane.css(metric, "-webkit-" + newSize);
-					pane.css(metric,              newSize);
+					pane.css(metric,			  newSize);
 				}
 			});
 
@@ -158,7 +158,7 @@ Panes = {
 		});
 	},
 	toggleCollapsed: function (pane) {
-		pane[0].paneData.toggleCollapsed();
+		pane.Pane().toggleCollapsed();
 	},
 	initDrag: function () {
 	},
@@ -176,6 +176,9 @@ Panes = {
 			}
 
 			return element.paneData;
+		};
+		$.fn.Pane = function() {
+			return Pane(this);
 		};
 		function paneData (element) {
 			this.els = {
@@ -304,7 +307,17 @@ Panes = {
 			var options = this.options, state = this.state;
 
 			var pane = this.els.pane;
-		
+
+			//If pane is maximized then restore it
+			if (state.isMaximized) {
+				this.restore();
+				var self = this;
+				setTimeout(function() {
+					self.toggleCollapsed();
+				}, Panes.transitionDuration);
+				return;
+			}
+
 			//Toggle state
 			state.isCollapsed = !state.isCollapsed;
 			pane.toggleClass("pane-minimized", state.isCollapsed);
@@ -482,13 +495,100 @@ Panes = {
 				}
 			}, 0);
 		};
+		proto.maximize = function() {
+			if (this.state.isMaximized) {
+				return;
+			}
+
+			var pane = this.els.pane;
+
+			//If pane is minimized then restore it
+			if (this.state.isCollapsed) {
+				pane.removeClass("pane-transition");
+				this.toggleCollapsed();
+			}
+
+			//If there is another maximized item then restore it
+			if ($(".pane-maximized").length) {
+				$(".pane-maximized").Pane().restore();
+				var self = this;
+				setTimeout(function() {
+					self.maximize();
+				}, Panes.transitionDuration);
+				return;
+			}
+
+			this.float(true);
+
+			//Start animating after pane is floating
+			pane.addClass("pane-transition");
+			setTimeout(function() {
+				pane.addClass("pane-maximized");
+			}, 0);
+
+			//Dispaly bogus container at the end of transition
+			this.floatData.bogusContainer.addClass("pane-maximized");
+			this.floatData.bogusContainer.css("background", "none");
+			var self = this;
+			setTimeout(function() {
+				self.floatData.bogusContainer.css("background", "");
+			}, Panes.transitionDuration);
+
+			this.state.isMaximized = true;
+		};
+		proto.restore = function() {
+			if (!this.state.isMaximized) {
+				return;
+			}
+
+			var pane = this.floatData.pane;
+
+			this.floatData.bogusContainer.css("background", "none");
+
+			pane.removeClass("pane-maximized");
+			//Shrink to placeholder's current position
+			var panePlaceholder = this.floatData.panePlaceholder;
+			var paneMargin = $("> .pane-margin", panePlaceholder);
+			var paneMarginBoundingBox = paneMargin.boundingBox();
+			pane.css("left", paneMarginBoundingBox.left)
+				.css("top", paneMarginBoundingBox.top)
+				.css("width", paneMarginBoundingBox.width())
+				.css("height", paneMarginBoundingBox.height())
+				.css("position", "absolute")
+				.addClass("pane-transition");
+
+			//Put back into panes grid
+			var self = this;
+			setTimeout(function() {
+				pane.css("position", "")
+					.removeClass("pane-transition");
+				self.float(false);
+
+				setTimeout(function() {
+					pane.addClass("pane-transition");
+				}, 0);
+			}, Panes.transitionDuration);
+
+			this.state.isMaximized = false;
+		};
 		proto.close = function() {
-			if (this.floatData) {
-				this.floatData.bogusContainer.remove();
+			//If pane is maximized then restore it
+			if (this.state.isMaximized) {
+				this.restore();
+				var self = this;
+				setTimeout(function () {
+					self.close();
+				}, Panes.transitionDuration);
+				return;
 			}
 
 			var pane = this.els.pane;
 			var parent = pane.parent();
+
+			if (this.floatData) {
+				this.floatData.bogusContainer.remove();
+			}
+
 			pane.next().remove();
 			pane.remove();
 
@@ -528,14 +628,14 @@ Panes = {
 				mouseStart: isVertical ? mouseStart.x : mouseStart.y,
 				prev: prev,
 				next: next,
-				prevStatic: prev[0].paneData.state.isStatic,
-				nextStatic: next[0].paneData.state.isStatic,
+				prevStatic: prev.Pane().state.isStatic,
+				nextStatic: next.Pane().state.isStatic,
 				currentPrevSizePX: prevSizePX,
 				totalSizePX: prevSizePX + nextSizePX,
 			}
 			var totalSizePC = 0;
-			var prevSizePC = prev[0].paneData.state.flexibleSize;
-			var nextSizePC = next[0].paneData.state.flexibleSize;
+			var prevSizePC = prev.Pane().state.flexibleSize;
+			var nextSizePC = next.Pane().state.flexibleSize;
 			if (!dragInfo.prevStatic && !dragInfo.nextStatic) {
 				totalSizePC = prevSizePC + nextSizePC;
 			} else if (!dragInfo.prevStatic) {
@@ -546,10 +646,10 @@ Panes = {
 			dragInfo.totalSizePC = totalSizePC;
 
 			if (dragInfo.prevStatic) {
-				dragInfo.prevStaticRatio = numberAndRest(prev[0].paneData.state.staticSize).number / prevSizePX;
+				dragInfo.prevStaticRatio = numberAndRest(prev.Pane().state.staticSize).number / prevSizePX;
 			}
 			if (dragInfo.nextStatic) {
-				dragInfo.nextStaticRatio = numberAndRest(next[0].paneData.state.staticSize).number / nextSizePX;
+				dragInfo.nextStaticRatio = numberAndRest(next.Pane().state.staticSize).number / nextSizePX;
 			}
 		
 			//Don't animate size changes
@@ -585,16 +685,16 @@ Panes = {
 
 			//Apply them
 			if (dragInfo.prevStatic) {
-				var nar = numberAndRest(dragInfo.prev[0].paneData.state.staticSize);
-				dragInfo.prev[0].paneData.state.staticSize = (newPrevSizePX * dragInfo.prevStaticRatio) + nar.rest;
+				var nar = numberAndRest(dragInfo.prev.Pane().state.staticSize);
+				dragInfo.prev.Pane().state.staticSize = (newPrevSizePX * dragInfo.prevStaticRatio) + nar.rest;
 			} else {
-				dragInfo.prev[0].paneData.state.flexibleSize = newPrevSizePC;
+				dragInfo.prev.Pane().state.flexibleSize = newPrevSizePC;
 			}
 			if (dragInfo.nextStatic) {
-				var nar = numberAndRest(dragInfo.next[0].paneData.state.staticSize);
-				dragInfo.next[0].paneData.state.staticSize = (newNextSizePX * dragInfo.nextStaticRatio) + nar.rest;
+				var nar = numberAndRest(dragInfo.next.Pane().state.staticSize);
+				dragInfo.next.Pane().state.staticSize = (newNextSizePX * dragInfo.nextStaticRatio) + nar.rest;
 			} else {
-				dragInfo.next[0].paneData.state.flexibleSize = newNextSizePC;
+				dragInfo.next.Pane().state.flexibleSize = newNextSizePC;
 			}
 
 			//Update only the relevant panes to avoid flickering
@@ -722,13 +822,14 @@ Panes = {
 
 			acceptParameters.onDragMove = Bound(this, this.onDragMovePreStart);
 			acceptParameters.onDragEnd = Bound(this, this.onDragEnd);
+			acceptParameters.onDragKeyDown = Bound(this, this.onDragKeyDown);
 			acceptParameters.dragExtra = dragInfo;
 		
 			return true;
 		},
 		onDragStart: function (dragInfo, mouse, mouseOffset) {
 			var pane = dragInfo.pane;
-			var paneData = pane[0].paneData
+			var paneData = pane.Pane()
 
 			//Find which containers can accept the pane
 			if (this.setDroppableTargets.length) {
@@ -804,7 +905,7 @@ Panes = {
 			}
 			//Move pane
 			var pane = dragInfo.pane;
-			var paneOffset = pane[0].paneData.floatData.paneOffset;
+			var paneOffset = pane.Pane().floatData.paneOffset;
 			pane.css("left", mouseOffset.x + paneOffset.left)
 						 .css("top", mouseOffset.y + paneOffset.top);
 
@@ -822,7 +923,7 @@ Panes = {
 			}
 		},
 		movePanePlaceholder: function(dragInfo) {
-			dragInfo.pane[0].paneData.movePanePlaceholder(dragInfo.divider);
+			dragInfo.pane.Pane().movePanePlaceholder(dragInfo.divider);
 
 			//Calculate the bounding boxes after resizing is done
 			dragInfo.pauseMovePlaceholder = true;
@@ -830,7 +931,7 @@ Panes = {
 			setTimeout(function() {
 				dragInfo.boundingBoxes = self.createBoundingBoxes();
 				dragInfo.pauseMovePlaceholder = false;
-			}, Panes.transitionDuration);
+			}, Panes.transitionDuration / 2);
 		},
 		onDragEnd: function (dragInfo) {
 			if (!dragInfo.dragStarted) {
@@ -846,7 +947,7 @@ Panes = {
 			$(".pane-divider").removeClass("pane-transition");
 
 			var pane = dragInfo.pane;
-			var paneData = pane[0].paneData;
+			var paneData = pane.Pane();
 			paneData.float(false);
 
 			//Animate size changes
@@ -872,17 +973,8 @@ Panes = {
 			}
 
 			var pane = $(this).closest(".pane-pane");
-		
-			//If pane is maximized then restore it
-			if (pane.hasClass("pane-maximized")) {
-				Panes.ControlBoxes.onRestore.call(this);
-				setTimeout(function() {
-					Panes.ControlBoxes.onMinimize.call(pane);
-				}, Panes.transitionDuration);
-				return;
-			}
+			var paneData = pane.Pane();
 
-			pane.addClass("pane-transition");
 			Panes.toggleCollapsed(pane);
 		},
 		onMaximize: function () {
@@ -892,33 +984,9 @@ Panes = {
 			}
 
 			var pane = $(this).closest(".pane-pane");
-			var paneData = pane[0].paneData;
+			var paneData = pane.Pane();
 
-			//If pane is minimized then restore it
-			if (pane.hasClass("pane-minimized")) {
-				pane.removeClass("pane-transition");
-				Panes.ControlBoxes.onMinimize.call(this);
-			}
-
-			//If there is another maximized item then restore it
-			if ($(".pane-maximized").length) {
-				Panes.ControlBoxes.onRestore.call($(".pane-maximized"));
-				setTimeout(function() {
-					Panes.ControlBoxes.onMaximize.call(pane);
-				}, Panes.transitionDuration);
-				return;
-			}
-
-			paneData.float(true);
-			pane.addClass("pane-transition");
-			setTimeout(function() {
-				pane.addClass("pane-maximized");
-			}, 0);
-			paneData.floatData.bogusContainer.addClass("pane-maximized");
-			paneData.floatData.bogusContainer.css("background", "none");
-			setTimeout(function() {
-				paneData.floatData.bogusContainer.css("background", "");
-			}, Panes.transitionDuration);
+			paneData.maximize();
 		},
 		onRestore: function () {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
@@ -927,32 +995,9 @@ Panes = {
 			}
 
 			var pane = $(this).closest(".pane-pane");
-			var paneData = pane[0].paneData;
+			var paneData = pane.Pane();
 
-			paneData.floatData.bogusContainer.css("background", "none");
-
-			pane.removeClass("pane-maximized");
-			//Shrink to placeholder's current position
-			var panePlaceholder = paneData.floatData.panePlaceholder;
-			var paneMargin = $("> .pane-margin", panePlaceholder);
-			var paneMarginBoundingBox = paneMargin.boundingBox();
-			pane.css("left", paneMarginBoundingBox.left)
-				.css("top", paneMarginBoundingBox.top)
-				.css("width", paneMarginBoundingBox.width())
-				.css("height", paneMarginBoundingBox.height())
-				.css("position", "absolute")
-				.addClass("pane-transition");
-
-			//Put back into panes grid
-			setTimeout(function() {
-				pane.css("position", "")
-					.removeClass("pane-transition");
-				paneData.float(false);
-
-				setTimeout(function() {
-					pane.addClass("pane-transition");
-				}, 0);
-			}, Panes.transitionDuration);
+			paneData.restore();
 		},
 		onClose: function () {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
@@ -961,7 +1006,7 @@ Panes = {
 			}
 			
 			var pane = $(this).closest(".pane-pane");
-			var paneData = pane[0].paneData;
+			var paneData = pane.Pane();
 
 			if (!paneData.confirmedClose) {
 				if (!confirm('Are you sure you want to close this?')) {
@@ -969,18 +1014,7 @@ Panes = {
 				}
 			}
 
-			//If pane is maximized then restore it
-			if (pane.hasClass("pane-maximized")) {
-				Panes.ControlBoxes.onRestore.call(this);
-				paneData.confirmedClose = true;
-				setTimeout(function () {
-					Panes.ControlBoxes.onClose.call(pane);
-				}, Panes.transitionDuration);
-				return;
-			}
-
 			paneData.close();
-			pane.remove();
 		},
 	},
 };
