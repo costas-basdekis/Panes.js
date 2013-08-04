@@ -3,19 +3,17 @@ $(function () {
 })
 
 DragCapture = {
-	_dragExtra: null,
-	_dragTarget: null,
-	_dragMouseStart: null,
-	_dragMousePrev: null,
+	_dragging: false,
+	_dragParameters: null,
 	init: function() {
 		this._onMouseDown = Bound(this, this._onMouseDown);
 		this._onMouseMove = Bound(this, this._onMouseMove);
 		this._onMouseUp   = Bound(this, this._onMouseUp);
+		this._onKeyDown   = Bound(this, this._onKeyDown);
+		this._onKeyUp     = Bound(this, this._onKeyUp);
 		$(document).on("mousedown", this._onMouseDown);
 	},
 	onDragStart: new CallbackQueue(), //Return an object to start dragging
-	_onDragMove: null,
-	_onDragEnd: null,
 	_cancelEvent: function () {
 		return false;
 	},
@@ -37,6 +35,10 @@ DragCapture = {
 	    	e = window.event; 
 	    }
 
+	    if (this._dragging) {
+	    	return;
+	    }
+
 	    //IE, left click == 1
 	    //Firefox, left click == 0
 	    if (!(e.button == 1 && window.event != null) &&
@@ -53,17 +55,18 @@ DragCapture = {
 	    	return;
 	    }
 
-	    this._onDragMove = acceptParameters.onDragMove;
-	    this._onDragEnd = acceptParameters.onDragEnd;
-	    this._dragExtra = acceptParameters.dragExtra;
+	    this._dragging = true;
 
-	    this._dragTarget = target;
-		this._dragMouseStart = mouse;
-		this._dragMousePrev = mouse;
+		this._dragParameters = acceptParameters;
+		this._dragParameters.mouseStart = mouse;
+		this._dragParameters.mousePrev = mouse;
+		this._dragParameters.target = target;
 
-	    $(document).on("mousemove", this, this._onMouseMove)
-	    		   .on("mouseup", this, this._onMouseUp)
-	    		   .on("selectstart", this._cancelEvent);
+		$(document).on("mousemove", this._onMouseMove)
+			.on("mouseup", this._onMouseUp)
+			.on("selectstart", this._cancelEvent)
+			.on("keydown", this._onKeyDown)
+			.on("keyup", this._onKeyUp);
 	    
 	    //Prevent text selection and image dragging
 	    document.body.focus();
@@ -75,35 +78,77 @@ DragCapture = {
 	        e = window.event;
 	    }
 
+	    if (!this._dragging) {
+	    	return;
+	    }
+
 	    var mouse = {x: e.clientX, y: e.clientY};
-	    var mouseOffset = {x: e.clientX - this._dragMouseStart.x,
-						   y: e.clientY - this._dragMouseStart.y};
-	    var mouseDelta = {x: e.clientX - this._dragMousePrev.x,
-						  y: e.clientY - this._dragMousePrev.y};
-	    if (this._onDragMove) {
-	    	var stopDrag = this._onDragMove(this._dragExtra, mouse, mouseOffset, mouseDelta);
+	    var mouseOffset = {x: e.clientX - this._dragParameters.mouseStart.x,
+						   y: e.clientY - this._dragParameters.mouseStart.y};
+	    var mouseDelta = {x: e.clientX - this._dragParameters.mousePrev.x,
+						  y: e.clientY - this._dragParameters.mousePrev.y};
+	    if (this._dragParameters.onDragMove) {
+	    	var stopDrag = this._dragParameters.onDragMove(
+	    		this._dragParameters.dragExtra, mouse, mouseOffset, mouseDelta);
 
 	    	if (stopDrag == false) {
 	    		this._onMouseUp();
 	    	}
 	    }
-		this._dragMousePrev = mouse;
+		this._dragParameters.mousePrev = mouse;
 	},
 	_onMouseUp: function () {
+		if (!this._dragging) {
+			return;
+		}
+
         // we're done with these events until the next OnMouseDown
         $(document).off("mousemove", this._onMouseMove)
         		   .off("mouseup", this._onMouseUp)
         		   .off("selectstart", this._cancelEvent);
-        if (this._dragTarget) {
-        	this._dragTarget.unbind("dragstart", this._cancelEvent);
+        if (this._dragParameters.dragTarget) {
+        	this._dragParameters.dragTarget.unbind("dragstart", this._cancelEvent);
         }
 
-        if (this._onDragEnd) {
-        	this._onDragEnd(this._dragExtra);
+        if (this._dragParameters.onDragEnd) {
+        	this._dragParameters.onDragEnd(this._dragParameters.dragExtra);
         }
 
-        this._dragExtra = null;
-        this._dragTarget = null;
-		this._dragMousePrev = null;
-	}
+        this._dragging = false;
+        this._dragParameters = null;
+	},
+	_onKeyDown: function (e) {
+	    if (e == null) {
+	        e = window.event;
+	    }
+
+		if (!this._dragging) {
+			return;
+		}
+
+	    var mouseOffset = {x: e.clientX - this._dragParameters.mousePrev.x,
+						   y: e.clientY - this._dragParameters.mousePrev.y};
+		if (this._dragParameters.onKeyDown) {
+			this._dragParameters.onKeyDown(
+				this._dragParameters.dragExtra, e.which,
+				this._dragParameters.mousePrev, mouseOffset);
+		}
+	},
+	_onKeyUp: function (e) {
+	    if (e == null) {
+	        e = window.event;
+	    }
+
+		if (!this._dragging) {
+			return;
+		}
+
+	    var mouseOffset = {x: e.clientX - this._dragParameters.mousePrev.x,
+						   y: e.clientY - this._dragParameters.mousePrev.y};
+		if (this._dragParameters.onKeyUp) {
+			this._dragParameters.onKeyUp(
+				this._dragParameters.dragExtra, e.which,
+				this._dragParameters.mousePrev, mouseOffset);
+		}
+	},
 }
