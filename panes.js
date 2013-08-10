@@ -329,10 +329,7 @@ Panes = {
 			//If pane is maximized then restore it
 			if (state.isMaximized) {
 				this.restore();
-				var self = this;
-				setTimeout(function() {
-					self.toggleCollapsed();
-				}, Panes.transitionDuration);
+				setTimeout(Bound(this, this.toggleCollapsed), Panes.transitionDuration);
 				return;
 			}
 
@@ -536,17 +533,15 @@ Panes = {
 
 			//If pane is minimized then restore it
 			if (this.state.isCollapsed) {
-				pane.removeClass("pane-transition");
 				this.toggleCollapsed();
+				setTimeout(Bound(this, this.maximize), Panes.transitionDuration);
+				return;
 			}
 
 			//If there is another maximized item then restore it
 			if ($(".pane-maximized").length) {
 				$(".pane-maximized").Pane().restore();
-				var self = this;
-				setTimeout(function() {
-					self.maximize();
-				}, Panes.transitionDuration);
+				setTimeout(Bound(this, this.maximize), Panes.transitionDuration);
 				return;
 			}
 
