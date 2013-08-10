@@ -19,11 +19,11 @@ body,
 }
 
 .pane-transition {
-	-webkit-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, -webkit-transform 0.35s;
-	   -moz-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,	-moz-transform 0.35s;
-		 -o-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,	  -o-transform 0.35s;
+	-webkit-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, min-width 0.35s, max-width 0.35s, -webkit-transform 0.35s;
+	   -moz-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, min-width 0.35s, max-width 0.35s,    -moz-transform 0.35s;
+		 -o-transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, min-width 0.35s, max-width 0.35s,      -o-transform 0.35s;
 	/*For some reason IE doesn't animate width*/
-			transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s,		 transform 0.35s;
+			transition: width 0.35s, height 0.35s, left 0.35s, top 0.35s, min-width 0.35s, max-width 0.35s,         transform 0.35s;
 }
 
 /*Container*/
@@ -159,6 +159,8 @@ body,
 	background-color: lightslategrey;
 	color: white;
 
+	cursor: default;
+
 	-webkit-transform: rotate(0deg);
 	   -moz-transform: rotate(0deg);
 		 -o-transform: rotate(0deg);
@@ -167,6 +169,8 @@ body,
 	   -moz-transform-origin: 1.75ex 1.75ex;
 		 -o-transform-origin: 1.75ex 1.75ex;
 			transform-origin: 1.75ex 1.75ex;
+	min-width: 0;
+	max-width: 50000px;
 }
 .pane-pane:not(.pane-maximized) > * > .pane-caption {
 	cursor: move;
