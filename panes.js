@@ -22,63 +22,100 @@ Panes = {
 	transitionDuration: 350,
 	init: function () {
 		this.initDOM();
-		this.initSizes();
-		this.updateSizes();
 	
 		this.Dividers.init();
 		this.Captions.init();
 		this.ControlBoxes.init();
 	},
 	initDOM: function () {
-		//Detach containers so that we don't redraw with each change
-		var topLevelContainers = $(":not(.pane-contents) > .pane-container");
-		var tlcPlaceholders = topLevelContainers.each(function(i, container) {
-			$(container).after("<div class='pane-container-placeholder'></div>");
-		}).next();
-
-		//Remove space between panes
-		$(".pane-container").contents().filter(function (i, element) {
-			return element.nodeName == "#text" && $.trim(this.innerHTML) == '';
-		}).remove();
-
-		//Make pane
-		$(".pane-pane").each(function (i, pane) {
-			var paneData = Panes.Pane(pane);
-
-			paneData.initDOM();
+		//Initialize containers
+		$(":not(.pane-pane) > .pane-container").each(function (i, container) {
+			$(container).Container().initDOM(true);
 		});
-
-		//Put dividers
-		var dividerHTML = "<span class='pane-divider'></span>";
-		$(".pane-pane").each(function(i, pane) {
-			pane = $(pane);
-
-			pane.after(dividerHTML);
-		});
-		$(".pane-container").each(function(i, container) {
-			container = $(container);
-
-			container.prepend(dividerHTML);
-		})
-
-		//Reattach containers and draw
-		topLevelContainers.each(function (i, container) {
-			var placeholder = tlcPlaceholders[i];
-			$(placeholder).after(container).detach();
-		})
-
-		//Animate dividers on hover
-		$(".pane-divider").addClass("pane-color-transition");
 	
 		//Enable transitions only after the page has loaded, and elements have
 		//been sized
-		setTimeout(function() {$(".pane-pane").addClass("pane-transition");}, Panes.transitionDuration);
+		setTimeout(function() {
+			$(".pane-pane").addClass("pane-transition");
+		}, Panes.transitionDuration);
 	},
-	initSizes: function () {
-		//Initialize every pane to have equal size
-		$(".pane-container").each(function (i, container) {
-			container = $(container);
+	//Change the pane sizes to reflect the data
+	toggleCollapsed: function (pane) {
+		pane.Pane().toggleCollapsed();
+	},
+	initDrag: function () {
+	},
+	Container: (function initContainerProto () {
+		function Container(element) {
+			var $element = $(element).closest(".pane-container");
+
+			if (!$element.length) {
+				return null;
+			}
+			element = $element[0];
+
+			if (!element.containerData) {
+				element.containerData = new containerData(element);
+			}
+
+			return element.containerData;
+		}
+		$.fn.Container = function() {
+			return Container(this);
+		};
+		function containerData (element) {
+			this.els = {
+				container: $(element),
+			};
+		};
+		var proto = containerData.prototype;
+
+		proto.initDOM = function (whileDetached) {
+			var container = this.els.container;
+
+			//Detach to to stop drawing
+			if (whileDetached) {
+				var placeholderHTML = "<div class='pane-container-placeholder'></div>";
+				var placeholder = container.after(placeholderHTML).next();
+				container.detach();
+			}
+
+			//Remove space between panes
+			container.contents().filter(function (i, element) {
+				return element.nodeName == "#text" && $.trim(this.innerHTML) == '';
+			}).remove();
+
+			//Put dividers
+			var dividerHTML = "<span class='pane-divider'></span>";
+			$("> .pane-pane", container).each(function(i, pane) {
+				pane = $(pane);
+
+				pane.after(dividerHTML);
+			});
+			container.prepend(dividerHTML);
 	
+			//Make pane
+			$("> .pane-pane", container).each(function (i, pane) {
+				pane = $(pane);
+				var paneData = pane.Pane();
+
+				paneData.initDOM();
+				if (paneData.state.hasContainer) {
+					$("> * > * > .pane-container", pane).Container().initDOM();
+				}
+			});
+
+			this.initSizes();
+
+			//Reattach
+			if (whileDetached) {
+				placeholder.before(container).remove();
+			}
+		};
+		proto.initSizes = function () {
+			var container = this.els.container;
+
+			//Initialize every pane to have equal size
 			var children = container.children(".pane-pane");
 			if (!children.length) {
 				return;
@@ -90,16 +127,12 @@ Panes = {
 			children.each(function (i, pane) {
 				pane.paneData.initSize(isVertical, size);
 			});
-		});
-	},
-	//Change the pane sizes to reflect the data
-	updateSizes: function (containers) {
-		if (typeof containers == "undefined") {
-			containers = $(".pane-container");
-		}
-	
-		containers.each(function (i, container, updateChildren) {
-			container = $(container);
+
+			this.updateSizes();
+		};
+		proto.updateSizes = function () {
+			var container = this.els.container;
+
 			var children = container.children(".pane-pane");
 	
 			var flexiblePanes = children.filter(function (i, pane) {
@@ -124,9 +157,6 @@ Panes = {
 			}, 0.);
 	
 			//Put the flexibles calculated sizes
-			if (updateChildren) {
-				flexiblePanes = flexiblePanes.filter(updateChildren);
-			}
 			flexiblePanes.each(function (i, pane) {
 				var paneData = pane.paneData;
 				pane = $(pane);
@@ -144,9 +174,6 @@ Panes = {
 			});
 
 			//Set static non-collapsed panes size
-			if (updateChildren) {
-				staticPanes = staticPanes.filter(updateChildren);
-			}
 			staticPanes.each(function (i, pane) {
 				var paneData = pane.paneData;
 				var $pane = $(pane);
@@ -155,13 +182,10 @@ Panes = {
 					$pane.css(metric, paneData.state.staticSize);
 				//}
 			});
-		});
-	},
-	toggleCollapsed: function (pane) {
-		pane.Pane().toggleCollapsed();
-	},
-	initDrag: function () {
-	},
+		};
+
+		return Container;
+	})(),
 	Pane: (function initPaneProto() {
 		function Pane (element) {
 			var $element = $(element).closest(".pane-pane");
@@ -262,7 +286,7 @@ Panes = {
 
 			//Check for just a container pane
 			var paneChildren = contents.children();
-			state.hasContainer = paneChildren.length == 2 && paneChildren.hasClass("pane-container");
+			state.hasContainer = paneChildren.length == 1 && paneChildren.hasClass("pane-container");
 			if (state.hasContainer) {
 				pane.addClass("pane-has-container");
 			}
@@ -348,7 +372,7 @@ Panes = {
 			}
 		
 			//Resize flexible panes
-			Panes.updateSizes(pane.parent());
+			pane.parent().Container().updateSizes();
 		};
 		proto.float = function(toggle) {
 			if (toggle) {
@@ -489,9 +513,9 @@ Panes = {
 
 			//Repaint the DOM before resizing the panes
 			setTimeout(function() {
-				Panes.updateSizes(newParent);
+				newParent.Container().updateSizes();
 				if (changedParents) {
-					Panes.updateSizes(oldParent);
+					oldParent.Container().updateSizes();
 				}
 			}, 0);
 		};
@@ -592,7 +616,7 @@ Panes = {
 			pane.next().remove();
 			pane.remove();
 
-			Panes.updateSizes(parent);
+			parent.Container().updateSizes();
 		};
 
 		return Pane;
@@ -698,11 +722,11 @@ Panes = {
 			}
 
 			//Update only the relevant panes to avoid flickering
-			Panes.updateSizes(dragInfo.container, [dragInfo.prev, dragInfo.next]);
+			dragInfo.container.Container().updateSizes();
 		},
 		onDragEnd: function (dragInfo) {
 			//Update all panes
-			Panes.updateSizes(dragInfo.container);
+			dragInfo.container.Container().updateSizes();
 
 			//Animate height changes
 			dragInfo.prev.addClass("pane-transition");
@@ -972,10 +996,7 @@ Panes = {
 				return;
 			}
 
-			var pane = $(this).closest(".pane-pane");
-			var paneData = pane.Pane();
-
-			Panes.toggleCollapsed(pane);
+			$(this).Pane().toggleCollapsed();
 		},
 		onMaximize: function () {
 			//Firefox: Avoid toggling the colapsed state right after a pane drag
