@@ -382,6 +382,10 @@ Panes = {
 			}
 		};
 		proto.floatOn = function() {
+			if (this.state.floating) {
+				return;
+			}
+
 			var pane = this.els.pane;
 			this.floatData = {
 				pane: pane,
@@ -426,8 +430,15 @@ Panes = {
 			this.floatData.paneOffset = paneOffset;
 			this.floatData.panePlaceholder = panePlaceholder;
 			this.floatData.bogusContainer = bogusContainer;
+
+			this.state.floating = true;
+			pane.addClass("pane-floating");
 		};
 		proto.floatOff = function() {
+			if (!this.state.floating) {
+				return;
+			}
+
 			var pane = this.floatData.pane;
 			//Set the target back to pane, from placeholder
 			this.els.pane = pane;
@@ -459,6 +470,9 @@ Panes = {
 			}
 
 			delete this.floatData;
+
+			this.state.floating = false;
+			pane.removeClass("pane-floating");
 		};
 		proto.movePanePlaceholder = function(dividerAfter) {
 			var pane = this.els.pane;

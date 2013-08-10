@@ -101,8 +101,10 @@ body,
 	position: relative;
 }
 .pane-vertical > .pane-pane {
-	display: inline-block;
 	height: 100%;
+}
+.pane-vertical > .pane-pane:not(.pane-floating) {
+	display: inline-block;
 	vertical-align: top;
 }
 .pane-horizontal > .pane-pane {
