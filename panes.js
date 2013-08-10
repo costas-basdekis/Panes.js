@@ -39,12 +39,6 @@ Panes = {
 			$(".pane-pane").addClass("pane-transition");
 		}, Panes.transitionDuration);
 	},
-	//Change the pane sizes to reflect the data
-	toggleCollapsed: function (pane) {
-		pane.Pane().toggleCollapsed();
-	},
-	initDrag: function () {
-	},
 	Container: (function initContainerProto () {
 		function Container(element) {
 			var $element = $(element).closest(".pane-container");
