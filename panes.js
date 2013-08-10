@@ -609,8 +609,8 @@ Panes = {
 			var isVertical = target.parent().hasClass("pane-vertical");
 		
 			//Find previous and next non-collapsed panes
-			var prev = target.prevAll(".pane-pane:not(.pane-collapsed)"),
-				next = target.nextAll(".pane-pane:not(.pane-collapsed)");
+			var prev = target.prevAll(".pane-pane:not(.pane-minimized)"),
+				next = target.nextAll(".pane-pane:not(.pane-minimized)");
 		
 			//No panes to resize
 			if (prev.length == 0 || next.length == 0) {
@@ -807,12 +807,12 @@ Panes = {
 				return false;
 			}
 
+			var pane = target.parent().parent();
+
 			//Don't drag while maximized
-			if (target.hasClass("pane-maximized")) {
+			if (pane.hasClass("pane-maximized")) {
 				return false;
 			}
-
-			var pane = target.parent().parent();
 			
 			dragInfo = {
 				pane: pane,
